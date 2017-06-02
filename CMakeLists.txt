@@ -2,12 +2,17 @@ cmake_minimum_required(VERSION 2.8.3)
 project(plane_calibration)
 
 find_package(catkin REQUIRED COMPONENTS
+  ecl_build
+  cmake_modules
   roscpp
   nodelet
   dynamic_reconfigure
+  sensor_msgs
 )
 
 ecl_enable_cxx11_compiler()
+
+find_package(Eigen REQUIRED)
 
 generate_dynamic_reconfigure_options(
     cfg/PlaneCalibration.cfg
@@ -17,12 +22,20 @@ catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
+        ecl_build
         roscpp
         nodelet
         dynamic_reconfigure
+        sensor_msgs
+    DEPENDS Eigen
 )
 
-include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(include
+    ${catkin_INCLUDE_DIRS}
+    ${EIGEN_INCLUDE_DIRS}
+)
+
+add_definitions(${EIGEN_DEFINITIONS})
 
 add_library(${PROJECT_NAME}
     src/plane_calibration_nodelet.cpp

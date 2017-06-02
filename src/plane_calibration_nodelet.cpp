@@ -1,6 +1,7 @@
 #include "../include/plane_calibration/plane_calibration_nodelet.hpp"
 
 #include <pluginlib/class_list_macros.h>
+#include <Eigen/Dense>
 
 namespace plane_calibration
 {
