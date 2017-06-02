@@ -24,8 +24,13 @@ void PlaneCalibrationNodelet::onInit()
 
 void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint32_t level)
 {
-  debug_ = config.debug;
+  if (debug_ != config.debug)
+  {
+    debug_ = config.debug;
+    ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Debug " << debug_ ? "enabled" : "disabled");
+  }
 }
+
 } /* end namespace */
 
 PLUGINLIB_EXPORT_CLASS(plane_calibration::PlaneCalibrationNodelet, nodelet::Nodelet)
