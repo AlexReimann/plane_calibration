@@ -6,7 +6,6 @@
 #include <dynamic_reconfigure/server.h>
 #include <plane_calibration/PlaneCalibrationConfig.h>
 
-
 namespace plane_calibration
 {
 
