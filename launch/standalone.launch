@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="nodelet" type="nodelet" name="plane_calibration_manager" args="manager"/>
+
+  <include file="$(find plane_calibration)/launch/nodelet.launch.xml">
+    <arg name="nodelet_manager_name"  value="plane_calibration_manager"/>
+  </include>
+</launch>
