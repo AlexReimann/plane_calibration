@@ -37,14 +37,8 @@ include_directories(include
 
 add_definitions(${EIGEN_DEFINITIONS})
 
-add_library(${PROJECT_NAME}
-    src/plane_calibration_nodelet.cpp
-)
+add_subdirectory(src)
 
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
-add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
-
-install(TARGETS ${PROJECT_NAME}  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.hpp")
