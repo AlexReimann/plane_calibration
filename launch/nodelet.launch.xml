@@ -1,0 +1,6 @@
+<launch>
+  <arg name="nodelet_manager_name"  default="plane_calibration_manager"/>
+
+  <node pkg="nodelet" type="nodelet" name="plane_calibration" args="load plane_calibration/PlaneCalibrationNodelet $(arg nodelet_manager_name)">
+  </node>
+</launch>

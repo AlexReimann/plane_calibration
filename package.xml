@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+  <name>plane_calibration</name>
+  <version>0.0.0</version>
+  <description>The plane calibration package for
+  robust on the fly 3d sensor orientation adjustments using the ground floor plane</description>
+  <maintainer email="a.reimann@yujinrobot.com">alex</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>nodelet</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>nodelet</run_depend>
+
+  <export>
+    <nodelet plugin="${prefix}/plugins/nodelets.xml"/>
+  </export>
+</package>
