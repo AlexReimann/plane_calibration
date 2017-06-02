@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   nodelet
   dynamic_reconfigure
   sensor_msgs
+  tf2_msgs
 )
 
 ecl_enable_cxx11_compiler()
@@ -27,6 +28,7 @@ catkin_package(
         nodelet
         dynamic_reconfigure
         sensor_msgs
+        tf2_msgs
     DEPENDS Eigen
 )
 
