@@ -28,8 +28,8 @@ protected:
 
   std::atomic<bool> debug_;
 
-  ros::Subscriber sub_depth_image_;
   ros::Publisher pub_transform_;
+  ros::Subscriber sub_depth_image_;
 };
 
 } /* end namespace */
