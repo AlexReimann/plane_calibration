@@ -28,6 +28,8 @@ void PlaneCalibrationNodelet::onInit()
 
   ros::NodeHandle node_handle;
 
+  pub_candidate_points_ = node_handle.advertise<sensor_msgs::Image>("candidates", 1);
+  pub_plane_points_ = node_handle.advertise<sensor_msgs::Image>("plane_points", 1);
   pub_transform_ = node_handle.advertise<tf2_msgs::TFMessage>("adjusted_tf", 1);
 
   sub_depth_image_ = node_handle.subscribe<sensor_msgs::Image>("input_depth_image", 1,
