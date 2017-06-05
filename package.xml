@@ -4,7 +4,7 @@
   <version>0.0.0</version>
   <description>The plane calibration package for
   robust on the fly 3d sensor orientation adjustments using the ground floor plane</description>
-  <maintainer email="a.reimann@yujinrobot.com">alex</maintainer>
+  <maintainer email="Rei.man.nalex8.8+ROS_PC@gmail.com">Alexander Reimann</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>catkin</buildtool_depend>
