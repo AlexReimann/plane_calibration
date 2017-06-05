@@ -41,6 +41,10 @@ add_definitions(${EIGEN_DEFINITIONS})
 
 add_subdirectory(src)
 
+if(CATKIN_ENABLE_TESTING)
+  add_subdirectory(test)
+endif()
+
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.hpp")
