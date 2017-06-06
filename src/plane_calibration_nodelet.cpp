@@ -1,10 +1,11 @@
 #include "plane_calibration/plane_calibration_nodelet.hpp"
 
+#include <Eigen/Dense>
+
 #include <pluginlib/class_list_macros.h>
 #include <ros/node_handle.h>
 #include <tf2_msgs/TFMessage.h>
-
-#include <Eigen/Dense>
+#include <image_geometry/pinhole_camera_model.h>
 
 #include "plane_calibration/image_msg_eigen_converter.hpp"
 
@@ -27,11 +28,14 @@ void PlaneCalibrationNodelet::onInit()
   reconfigure_server_->setCallback(reconfigure_cb);
 
   ros::NodeHandle node_handle;
+  depth_visualizer_ = std::make_shared<DepthVisualizer>(node_handle);
 
   pub_candidate_points_ = node_handle.advertise<sensor_msgs::Image>("candidates", 1);
   pub_plane_points_ = node_handle.advertise<sensor_msgs::Image>("plane_points", 1);
   pub_transform_ = node_handle.advertise<tf2_msgs::TFMessage>("adjusted_tf", 1);
 
+  sub_camera_info_ = node_handle.subscribe<sensor_msgs::CameraInfo>("camera_info", 1,
+                                                                    &PlaneCalibrationNodelet::cameraInfoCB, this);
   sub_depth_image_ = node_handle.subscribe<sensor_msgs::Image>("input_depth_image", 1,
                                                                &PlaneCalibrationNodelet::depthImageCB, this);
 
@@ -47,8 +51,22 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   }
 }
 
+void PlaneCalibrationNodelet::cameraInfoCB(const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
+{
+  image_geometry::PinholeCameraModel camera_model;
+  camera_model.fromCameraInfo(camera_info_msg);
+  camera_model_.update(camera_model.cx(), camera_model.cy(), camera_model.fx(), camera_model.fy());
+
+  depth_visualizer_->setCameraModel(camera_model);
+}
+
 void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& depth_image_msg)
 {
+  if (!camera_model_.initialized())
+  {
+    return;
+  }
+
   Eigen::MatrixXf depth_matrix;
 
   bool converted_successfully = ImageMsgEigenConverter::convert(depth_image_msg, depth_matrix);
