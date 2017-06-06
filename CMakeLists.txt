@@ -9,6 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   sensor_msgs
   tf2_msgs
+  image_geometry
+  depth_image_proc
 )
 
 ecl_enable_cxx11_compiler()
@@ -29,6 +31,8 @@ catkin_package(
         dynamic_reconfigure
         sensor_msgs
         tf2_msgs
+        image_geometry
+        depth_image_proc
     DEPENDS Eigen
 )
 
