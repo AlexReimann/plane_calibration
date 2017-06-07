@@ -6,8 +6,10 @@
 #include <ros/node_handle.h>
 #include <tf2_msgs/TFMessage.h>
 #include <image_geometry/pinhole_camera_model.h>
+#include <eigen_conversions/eigen_msg.h>
 
 #include "plane_calibration/image_msg_eigen_converter.hpp"
+#include "plane_calibration/plane_to_depth_image.hpp"
 
 namespace plane_calibration
 {
@@ -27,7 +29,7 @@ void PlaneCalibrationNodelet::onInit()
       &PlaneCalibrationNodelet::reconfigureCB, this, _1, _2);
   reconfigure_server_->setCallback(reconfigure_cb);
 
-  ros::NodeHandle node_handle;
+  ros::NodeHandle node_handle = this->getPrivateNodeHandle();
   depth_visualizer_ = std::make_shared<DepthVisualizer>(node_handle);
 
   pub_candidate_points_ = node_handle.advertise<sensor_msgs::Image>("candidates", 1);
@@ -55,8 +57,14 @@ void PlaneCalibrationNodelet::cameraInfoCB(const sensor_msgs::CameraInfoConstPtr
 {
   image_geometry::PinholeCameraModel camera_model;
   camera_model.fromCameraInfo(camera_info_msg);
-  camera_model_.update(camera_model.cx(), camera_model.cy(), camera_model.fx(), camera_model.fy());
 
+  if (!camera_model_.initialized())
+  {
+    ROS_INFO("[PlaneCalibrationNodelet]: Got camera info");
+  }
+
+  camera_model_.update(camera_model.cx(), camera_model.cy(), camera_model.fx(), camera_model.fy(),
+                       camera_info_msg->width, camera_info_msg->height);
   depth_visualizer_->setCameraModel(camera_model);
 }
 

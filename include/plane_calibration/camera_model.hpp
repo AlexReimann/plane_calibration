@@ -9,44 +9,53 @@ namespace plane_calibration
 class CameraModel
 {
 public:
-  class Values
+  class Parameters
   {
   public:
-    Values()
+    Parameters()
     {
       center_x_ = 0.0;
       center_y_ = 0.0;
       f_x_ = 0.0;
       f_y_ = 0.0;
+      width_ = 0.0;
+      height_ = 0.0;
     }
 
-    Values(const double& center_x, const double center_y, const double f_x, const double f_y)
+    Parameters(const double& center_x, const double& center_y, const double& f_x, const double& f_y, const int& width,
+               const int& height)
     {
       center_x_ = center_x;
       center_y_ = center_y;
       f_x_ = f_x;
       f_y_ = f_y;
+      width_ = width;
+      height_ = height;
     }
 
     double center_x_;
     double center_y_;
     double f_x_;
     double f_y_;
+    int width_;
+    int height_;
   };
 
   CameraModel();
-  CameraModel(const double& center_x, const double& center_y, const double& f_x, const double& f_y);
+  CameraModel(const double& center_x, const double& center_y, const double& f_x, const double& f_y, const int& width,
+              const int& height);
   CameraModel(const CameraModel &object);
 
   bool initialized() const;
-  void update(const double& center_x, const double& center_y, const double& f_x, const double& f_y);
-  Values getValues() const;
+  void update(const double& center_x, const double& center_y, const double& f_x, const double& f_y, const int& width,
+              const int& height);
+  Parameters getValues() const;
 
 protected:
 
   mutable std::mutex mutex_;
   bool initialized_;
-  Values values_;
+  Parameters values_;
 };
 
 } /* end namespace */

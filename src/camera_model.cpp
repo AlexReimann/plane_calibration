@@ -7,9 +7,10 @@ CameraModel::CameraModel()
   initialized_ = false;
 }
 
-CameraModel::CameraModel(const double& center_x, const double& center_y, const double& f_x, const double& f_y)
+CameraModel::CameraModel(const double& center_x, const double& center_y, const double& f_x, const double& f_y,
+                         const int& width, const int& height)
 {
-  values_ = Values(center_x, center_y, f_x, f_y);
+  values_ = Parameters(center_x, center_y, f_x, f_y, width, height);
   initialized_ = true;
 }
 
@@ -25,7 +26,8 @@ bool CameraModel::initialized() const
   return initialized_;
 }
 
-void CameraModel::update(const double& center_x, const double& center_y, const double& f_x, const double& f_y)
+void CameraModel::update(const double& center_x, const double& center_y, const double& f_x, const double& f_y,
+                         const int& width, const int& height)
 {
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -33,11 +35,13 @@ void CameraModel::update(const double& center_x, const double& center_y, const d
   values_.center_y_ = center_y;
   values_.f_x_ = f_x;
   values_.f_y_ = f_y;
+  values_.width_ = width;
+  values_.height_ = height;
 
   initialized_ = true;
 }
 
-CameraModel::Values CameraModel::getValues() const
+CameraModel::Parameters CameraModel::getValues() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return values_;
