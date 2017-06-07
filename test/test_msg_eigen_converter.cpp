@@ -38,7 +38,7 @@ TEST(Converter, convertShort)
 
   const unsigned char* data_pointer = &(original_image->data.front());
   const unsigned short* short_data_pointer = reinterpret_cast<const unsigned short*>(data_pointer);
-  Eigen::Map<const Eigen::Matrix<unsigned short, Eigen::Dynamic, Eigen::Dynamic>> map(short_data_pointer, height, width);
+  Eigen::Map<const Eigen::Matrix<unsigned short, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> map(short_data_pointer, height, width);
 
   Eigen::MatrixXf matrix;
   ImageMsgEigenConverter::convert(original_image, matrix);

@@ -42,14 +42,17 @@ Eigen::MatrixXf ImageMsgEigenConverter::dataToMatrix(const unsigned char* data_p
 {
   const DataType* short_data_pointer = reinterpret_cast<const DataType*>(data_pointer);
 
-  Eigen::Map<const Eigen::Matrix<DataType, Eigen::Dynamic, Eigen::Dynamic>> map(short_data_pointer, height, width);
+  Eigen::Map<const Eigen::Matrix<DataType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> map(short_data_pointer,
+                                                                                                 height, width);
 
   // C++ template trickery: https://stackoverflow.com/q/29754251
   return map.template cast<float>();
 }
 
-bool ImageMsgEigenConverter::convert(const Eigen::MatrixXf& matrix, sensor_msgs::Image& out_image_msg)
+bool ImageMsgEigenConverter::convert(const Eigen::MatrixXf& _matrix, sensor_msgs::Image& out_image_msg)
 {
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> matrix(_matrix);
+
   out_image_msg.height = matrix.rows();
   out_image_msg.width = matrix.cols();
   out_image_msg.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
