@@ -58,7 +58,16 @@ sensor_msgs::PointCloud2Ptr DepthVisualizer::floatImageMsgToPointCloud(
     const sensor_msgs::Image& image_msg, const image_geometry::PinholeCameraModel& camera_model)
 {
   sensor_msgs::ImagePtr image_msg_ptr = boost::make_shared<sensor_msgs::Image>(image_msg);
+
   sensor_msgs::PointCloud2Ptr cloud_msg_ptr = boost::make_shared<sensor_msgs::PointCloud2>();
+  cloud_msg_ptr->header = image_msg.header;
+  cloud_msg_ptr->height = image_msg.height;
+  cloud_msg_ptr->width = image_msg.width;
+  cloud_msg_ptr->is_dense = false;
+  cloud_msg_ptr->is_bigendian = false;
+
+  sensor_msgs::PointCloud2Modifier pcd_modifier(*cloud_msg_ptr);
+  pcd_modifier.setPointCloud2FieldsByString(1, "xyz");
 
   depth_image_proc::convert<float>(image_msg_ptr, cloud_msg_ptr, camera_model);
   return cloud_msg_ptr;
@@ -68,7 +77,7 @@ template<typename MsgType>
 void DepthVisualizer::addPublisherIfNotExist(const std::string& topic)
 {
   auto publisher_match = publishers_.find(topic);
-  bool publisher_exists_already = publisher_match == publishers_.end();
+  bool publisher_exists_already = publisher_match != publishers_.end();
 
   if (!publisher_exists_already)
   {
