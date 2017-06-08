@@ -86,4 +86,32 @@ PlaneCalibration::PlanesWithTransforms PlaneCalibration::getDeviationPlanes()
   return max_deviation_planes_images_;
 }
 
+std::vector<double> PlaneCalibration::getDistancesToMaxDeviations(const Eigen::MatrixXf& plane)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::vector<double> distances;
+
+  for (int i = 0; i < max_deviation_planes_images_.size(); ++i)
+  {
+    Eigen::MatrixXf plane_copy = Eigen::MatrixXf(plane);
+    Eigen::MatrixXf deviation_plane = max_deviation_planes_images_[i].plane;
+    Eigen::MatrixXf difference = (plane_copy - deviation_plane).cwiseAbs2();
+    double distance = difference.sum();
+
+    //kind of normalization, not perfect though
+    if (i == 0 || i == 2)
+    {
+      distance = distance / plane.rows();
+    }
+    else
+    {
+      distance = distance / plane.cols();
+    }
+
+    distances.push_back(distance);
+  }
+
+  return distances;
+}
+
 } /* end namespace */

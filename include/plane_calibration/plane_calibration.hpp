@@ -51,6 +51,8 @@ public:
   virtual bool updateMaxDeviationPlanesIfNeeded();
   virtual PlanesWithTransforms getDeviationPlanes();
 
+  virtual std::vector<double> getDistancesToMaxDeviations(const Eigen::MatrixXf& plane);
+
 protected:
   virtual void updateMaxDeviationPlanesImages();
   virtual std::vector<Eigen::Affine3d> getMaxDeviationTransforms();
