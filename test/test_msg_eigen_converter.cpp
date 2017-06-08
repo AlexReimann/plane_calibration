@@ -1,4 +1,3 @@
-
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <sensor_msgs/image_encodings.h>
@@ -7,7 +6,7 @@
 
 using namespace plane_calibration;
 
-TEST(Converter, convertFloat)
+TEST(MsgEigenConverter, convertFloat)
 {
   Eigen::MatrixXf original_matrix = Eigen::MatrixXf::Random(640, 480);
 
@@ -23,7 +22,7 @@ TEST(Converter, convertFloat)
   EXPECT_NE(original_matrix, converted_matrix);
 }
 
-TEST(Converter, convertShort)
+TEST(MsgEigenConverter, convertShort)
 {
   unsigned int height = 640;
   unsigned int width = 480;
@@ -49,10 +48,3 @@ TEST(Converter, convertShort)
   EXPECT_NE(matrix.cast<unsigned short>(), map.cast<unsigned short>());
 }
 
-//Run with "catkin_make run_tests_plane_calibration"
-int main(int argc, char **argv)
-{
-  testing::InitGoogleTest(&argc, argv);
-  srand((int)time(0));
-  return RUN_ALL_TESTS();
-}
