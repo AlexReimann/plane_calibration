@@ -28,6 +28,8 @@ public:
   void publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id);
   void publishCloud(const std::string& topic, const sensor_msgs::Image& image_msg);
 
+  void publishDouble(const std::string& topic, const double& value);
+
   static sensor_msgs::PointCloud2Ptr floatImageMsgToPointCloud(const sensor_msgs::Image& image_msg,
                                                                const image_geometry::PinholeCameraModel& camera_model);
 

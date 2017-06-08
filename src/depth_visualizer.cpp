@@ -1,5 +1,8 @@
+#include "plane_calibration/depth_visualizer.hpp"
+
 #include <depth_image_proc/depth_conversions.h>
 #include <plane_calibration/depth_visualizer.hpp>
+#include <std_msgs/Float32.h>
 #include "plane_calibration/image_msg_eigen_converter.hpp"
 
 namespace plane_calibration
@@ -45,10 +48,10 @@ void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::Matrix
 void DepthVisualizer::publishCloud(const std::string& topic, const sensor_msgs::Image& image_msg)
 {
   addPublisherIfNotExist<sensor_msgs::PointCloud2>(topic);
-  sensor_msgs::PointCloud2Ptr point_cloud_msg_ptr = imageMsgToPointCloud(image_msg);
 
   if (publishers_[topic].getNumSubscribers() > 0)
   {
+    sensor_msgs::PointCloud2Ptr point_cloud_msg_ptr = imageMsgToPointCloud(image_msg);
     publishers_[topic].publish(point_cloud_msg_ptr);
   }
 }
@@ -93,6 +96,18 @@ void DepthVisualizer::addPublisherIfNotExist(const std::string& topic)
   {
     publishers_.emplace(topic, node_handle_.advertise<MsgType>(topic, 1));
     return;
+  }
+}
+
+void DepthVisualizer::publishDouble(const std::string& topic, const double& value)
+{
+  addPublisherIfNotExist<std_msgs::Float32>(topic);
+
+  if (publishers_[topic].getNumSubscribers() > 0)
+  {
+    std_msgs::Float32 msg;
+    msg.data = value;
+    publishers_[topic].publish(msg);
   }
 }
 
