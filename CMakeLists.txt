@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   image_geometry
   depth_image_proc
   eigen_conversions
+  tf2_ros
 )
 
 ecl_enable_cxx11_compiler()
@@ -35,6 +36,7 @@ catkin_package(
         image_geometry
         depth_image_proc
         eigen_conversions
+        tf2_ros
     DEPENDS Eigen
 )
 

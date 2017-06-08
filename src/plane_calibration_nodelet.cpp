@@ -7,6 +7,7 @@
 #include <tf2_msgs/TFMessage.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include "plane_calibration/image_msg_eigen_converter.hpp"
 #include "plane_calibration/plane_to_depth_image.hpp"
@@ -51,6 +52,14 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
     debug_ = config.debug;
     ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Debug " << debug_ ? "enabled" : "disabled");
   }
+
+  x_offset_ = config.x;
+  y_offset_ = config.y;
+  z_offset_ = config.z;
+
+  px_offset_ = config.px;
+  py_offset_ = config.py;
+  pz_offset_ = config.pz;
 }
 
 void PlaneCalibrationNodelet::cameraInfoCB(const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
@@ -62,9 +71,9 @@ void PlaneCalibrationNodelet::cameraInfoCB(const sensor_msgs::CameraInfoConstPtr
   {
     ROS_INFO("[PlaneCalibrationNodelet]: Got camera info");
   }
-
   camera_model_.update(camera_model.cx(), camera_model.cy(), camera_model.fx(), camera_model.fy(),
                        camera_info_msg->width, camera_info_msg->height);
+
   depth_visualizer_->setCameraModel(camera_model);
 }
 

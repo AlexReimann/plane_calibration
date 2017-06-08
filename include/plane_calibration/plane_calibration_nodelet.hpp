@@ -32,6 +32,13 @@ protected:
   std::shared_ptr<dynamic_reconfigure::Server<PlaneCalibrationConfig> > reconfigure_server_;
 
   std::atomic<bool> debug_;
+  std::atomic<double> x_offset_;
+  std::atomic<double> y_offset_;
+  std::atomic<double> z_offset_;
+
+  std::atomic<double> px_offset_;
+  std::atomic<double> py_offset_;
+  std::atomic<double> pz_offset_;
 
   CameraModel camera_model_;
 
