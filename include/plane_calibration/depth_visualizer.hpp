@@ -22,9 +22,10 @@ public:
 
   void setCameraModel(const image_geometry::PinholeCameraModel& camera_model);
 
-  void publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix);
+  void publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id =
+                        "not_set_by_plane_calibration_DepthVisualizer");
   void publishImage(const std::string& topic, const sensor_msgs::Image& image_msg);
-  void publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix);
+  void publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id);
   void publishCloud(const std::string& topic, const sensor_msgs::Image& image_msg);
 
   static sensor_msgs::PointCloud2Ptr floatImageMsgToPointCloud(const sensor_msgs::Image& image_msg,
