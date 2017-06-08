@@ -49,6 +49,7 @@ public:
   bool initialized() const;
   void update(const double& center_x, const double& center_y, const double& f_x, const double& f_y, const int& width,
               const int& height);
+  void update(const Parameters& parameters);
   Parameters getValues() const;
 
 protected:

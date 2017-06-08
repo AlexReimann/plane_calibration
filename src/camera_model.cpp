@@ -41,6 +41,14 @@ void CameraModel::update(const double& center_x, const double& center_y, const d
   initialized_ = true;
 }
 
+void CameraModel::update(const Parameters& parameters)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  values_= parameters;
+  initialized_ = true;
+}
+
 CameraModel::Parameters CameraModel::getValues() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
