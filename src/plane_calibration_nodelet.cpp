@@ -53,7 +53,8 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   if (debug_ != config.debug)
   {
     debug_ = config.debug;
-    ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Debug " << debug_ ? "enabled" : "disabled");
+    std::string debug_status = debug_ ? "enabled" : "disabled";
+    ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Debug " << debug_status);
   }
 
   x_offset_ = config.x;
