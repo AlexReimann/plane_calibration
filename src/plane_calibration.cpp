@@ -12,7 +12,7 @@ PlaneCalibration::PlaneCalibration()
 
 void PlaneCalibration::updateParameters(const CameraModel& camera_model)
 {
-  camera_model_.update(camera_model.getValues());
+  camera_model_.update(camera_model.getParameters());
 }
 
 void PlaneCalibration::updateParameters(const Parameters& parameters)
@@ -51,7 +51,7 @@ void PlaneCalibration::updateMaxDeviationPlanesImages()
   {
     PlaneWithTransform plane;
     plane.transform = transforms[i];
-    plane.plane = PlaneToDepthImage::convert(transforms[i], camera_model_.getValues());
+    plane.plane = PlaneToDepthImage::convert(transforms[i], camera_model_.getParameters());
 
     max_deviation_planes_images_.push_back(plane);
   }

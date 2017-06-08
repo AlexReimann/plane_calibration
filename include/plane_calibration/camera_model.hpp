@@ -50,13 +50,13 @@ public:
   void update(const double& center_x, const double& center_y, const double& f_x, const double& f_y, const int& width,
               const int& height);
   void update(const Parameters& parameters);
-  Parameters getValues() const;
+  Parameters getParameters() const;
 
 protected:
 
   mutable std::mutex mutex_;
   bool initialized_;
-  Parameters values_;
+  Parameters parameters_;
 };
 
 } /* end namespace */
