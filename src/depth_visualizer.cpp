@@ -27,7 +27,11 @@ void DepthVisualizer::publishImage(const std::string& topic, const Eigen::Matrix
 void DepthVisualizer::publishImage(const std::string& topic, const sensor_msgs::Image& image_msg)
 {
   addPublisherIfNotExist<sensor_msgs::Image>(topic);
-  publishers_[topic].publish(image_msg);
+
+  if (publishers_[topic].getNumSubscribers() > 0)
+  {
+    publishers_[topic].publish(image_msg);
+  }
 }
 
 void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id)
@@ -42,7 +46,11 @@ void DepthVisualizer::publishCloud(const std::string& topic, const sensor_msgs::
 {
   addPublisherIfNotExist<sensor_msgs::PointCloud2>(topic);
   sensor_msgs::PointCloud2Ptr point_cloud_msg_ptr = imageMsgToPointCloud(image_msg);
-  publishers_[topic].publish(point_cloud_msg_ptr);
+
+  if (publishers_[topic].getNumSubscribers() > 0)
+  {
+    publishers_[topic].publish(point_cloud_msg_ptr);
+  }
 }
 
 sensor_msgs::PointCloud2Ptr DepthVisualizer::imageMsgToPointCloud(const sensor_msgs::Image& image_msg)
