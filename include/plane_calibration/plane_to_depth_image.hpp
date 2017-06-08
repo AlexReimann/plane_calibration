@@ -15,7 +15,7 @@ public:
   static Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation,
                                  const CameraModel::Parameters& camera_model_paramaters);
 
-  static std::pair<Eigen::MatrixXd, Eigen::MatrixXd> depthVectors(const CameraModel::Parameters& camera_model_paramaters);
+  static std::pair<Eigen::MatrixXd, Eigen::MatrixXd> depthCalculationXYMultiplier(const CameraModel::Parameters& camera_model_paramaters);
 
 protected:
 
