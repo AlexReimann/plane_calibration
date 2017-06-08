@@ -14,6 +14,7 @@
 #include <sensor_msgs/Image.h>
 
 #include "camera_model.hpp"
+#include "plane_calibration.hpp"
 #include "depth_visualizer.hpp"
 
 namespace plane_calibration
@@ -31,20 +32,10 @@ protected:
   virtual void cameraInfoCB(const sensor_msgs::CameraInfoConstPtr& camera_info_msg);
   virtual void depthImageCB(const sensor_msgs::ImageConstPtr& depth_image_msg);
 
-  virtual void updateMaxDeviationPlanesImages();
-  virtual std::vector<Eigen::Affine3d> getMaxDeviationTransforms();
-  virtual Eigen::MatrixXf getTiltedPlaneImage(Eigen::Affine3d tilt_transform);
   virtual void publishMaxDeviationPlanes();
 
-  CameraModel camera_model_;
-  std::mutex ground_offset_mutex_;
+  PlaneCalibration plane_calibration_;
   Eigen::Vector3d ground_plane_offset_;
-
-  std::atomic<double> max_deviation_;
-  std::atomic<bool> update_max_deviation_planes_;
-  std::vector<Eigen::MatrixXf> max_deviation_planes_images_;
-
-  std::atomic<bool> use_manual_ground_transform_;
 
   std::shared_ptr<DepthVisualizer> depth_visualizer_;
   std::shared_ptr<dynamic_reconfigure::Server<PlaneCalibrationConfig>> reconfigure_server_;

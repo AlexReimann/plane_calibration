@@ -18,8 +18,6 @@ namespace plane_calibration
 
 PlaneCalibrationNodelet::PlaneCalibrationNodelet()
 {
-  update_max_deviation_planes_ = true;
-  use_manual_ground_transform_ = false;
   debug_ = false;
 }
 
@@ -65,48 +63,32 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   py_offset_ = config.py;
   pz_offset_ = config.pz;
 
-  max_deviation_ = ecl::degrees_to_radians(config.max_deviation_degrees);
-
-  std::lock_guard<std::mutex> lock(ground_offset_mutex_);
+  Eigen::Vector3d ground_plane_offset = ground_plane_offset_;
   if (config.use_manual_ground_transform)
   {
-    ground_plane_offset_ = Eigen::Vector3d(x_offset_, y_offset_, z_offset_);
-    update_max_deviation_planes_ = true;
+    ground_plane_offset = Eigen::Vector3d(x_offset_, y_offset_, z_offset_);
   }
 
-  bool switched_off_manual = !config.use_manual_ground_transform
-      && use_manual_ground_transform_ != config.use_manual_ground_transform;
-  if (switched_off_manual)
-  {
-    ///TODO switch ground_plane_offset_ back to normal
-    update_max_deviation_planes_ = true;
-  }
-
-  use_manual_ground_transform_ = config.use_manual_ground_transform;
+  PlaneCalibration::Parameters parameters;
+  parameters.ground_plane_offset_ = ground_plane_offset;
+  parameters.max_deviation_ = ecl::degrees_to_radians(config.max_deviation_degrees);
+  plane_calibration_.updateParameters(parameters);
 }
 
 void PlaneCalibrationNodelet::cameraInfoCB(const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
 {
-  image_geometry::PinholeCameraModel camera_model;
-  camera_model.fromCameraInfo(camera_info_msg);
+  image_geometry::PinholeCameraModel pinhole_camera_model;
+  pinhole_camera_model.fromCameraInfo(camera_info_msg);
 
-  if (!camera_model_.initialized())
-  {
-    ROS_INFO("[PlaneCalibrationNodelet]: Got camera info");
-  }
-  camera_model_.update(camera_model.cx(), camera_model.cy(), camera_model.fx(), camera_model.fy(),
-                       camera_info_msg->width, camera_info_msg->height);
+  depth_visualizer_->setCameraModel(pinhole_camera_model);
 
-  depth_visualizer_->setCameraModel(camera_model);
+  CameraModel camera_model(pinhole_camera_model.cx(), pinhole_camera_model.cy(), pinhole_camera_model.fx(),
+                           pinhole_camera_model.fy(), camera_info_msg->width, camera_info_msg->height);
+  plane_calibration_.updateParameters(camera_model);
 }
 
 void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& depth_image_msg)
 {
-  if (!camera_model_.initialized())
-  {
-    return;
-  }
-
   Eigen::MatrixXf depth_matrix;
 
   bool converted_successfully = ImageMsgEigenConverter::convert(depth_image_msg, depth_matrix);
@@ -116,60 +98,12 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
     return;
   }
 
-  if (update_max_deviation_planes_)
-  {
-    updateMaxDeviationPlanesImages();
-  }
+  plane_calibration_.updateMaxDeviationPlanesIfNeeded();
 
   if (debug_)
   {
     publishMaxDeviationPlanes();
   }
-}
-
-void PlaneCalibrationNodelet::updateMaxDeviationPlanesImages()
-{
-  max_deviation_planes_images_.clear();
-  std::vector<Eigen::Affine3d> transforms = getMaxDeviationTransforms();
-
-  for (int i = 0; i < transforms.size(); ++i)
-  {
-    Eigen::Affine3d transform = transforms[i];
-    max_deviation_planes_images_.push_back(getTiltedPlaneImage(transform));
-  }
-
-  update_max_deviation_planes_ = false;
-}
-
-std::vector<Eigen::Affine3d> PlaneCalibrationNodelet::getMaxDeviationTransforms()
-{
-  double max_deviation;
-  Eigen::Translation3d translation;
-  {
-    std::lock_guard<std::mutex> lock(ground_offset_mutex_);
-    max_deviation = max_deviation_;
-    translation = Eigen::Translation3d(ground_plane_offset_);
-  }
-
-  Eigen::AngleAxisd x_tilt_positive(max_deviation, Eigen::Vector3d::UnitX());
-  Eigen::AngleAxisd y_tilt_positive(max_deviation, Eigen::Vector3d::UnitY());
-
-  Eigen::AngleAxisd x_tilt_negative(-max_deviation, Eigen::Vector3d::UnitX());
-  Eigen::AngleAxisd y_tilt_negative(-max_deviation, Eigen::Vector3d::UnitY());
-
-  std::vector<Eigen::Affine3d> tilt_transforms;
-  tilt_transforms.push_back(translation * x_tilt_positive);
-  tilt_transforms.push_back(translation * y_tilt_positive);
-
-  tilt_transforms.push_back(translation * x_tilt_negative);
-  tilt_transforms.push_back(translation * y_tilt_negative);
-
-  return tilt_transforms;
-}
-
-Eigen::MatrixXf PlaneCalibrationNodelet::getTiltedPlaneImage(Eigen::Affine3d tilt_transform)
-{
-  return PlaneToDepthImage::convert(tilt_transform, camera_model_.getValues());
 }
 
 void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
@@ -181,12 +115,12 @@ void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
   std::string frame_id = "camera_link";
   transformStamped.header.frame_id = frame_id;
 
-  std::vector<Eigen::Affine3d> transforms = getMaxDeviationTransforms();
+  PlaneCalibration::PlanesWithTransforms planes = plane_calibration_.getDeviationPlanes();
 
-  for (int i = 0; i < max_deviation_planes_images_.size(); ++i)
+  for (int i = 0; i < planes.size(); ++i)
   {
-    Eigen::MatrixXf plane_image_matrix = max_deviation_planes_images_[i];
-    Eigen::Affine3d transform = transforms[i];
+    Eigen::MatrixXf plane_image_matrix = planes[i].plane;
+    Eigen::Affine3d transform = planes[i].transform;
     std::string index_string = std::to_string(i);
 
     depth_visualizer_->publishImage("/debug/images/max_deviation_" + index_string, plane_image_matrix, frame_id);
