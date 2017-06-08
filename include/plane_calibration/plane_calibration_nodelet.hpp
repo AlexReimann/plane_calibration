@@ -3,6 +3,8 @@
 
 #include <atomic>
 #include <mutex>
+#include <vector>
+#include <Eigen/Dense>
 
 #include <nodelet/nodelet.h>
 #include <dynamic_reconfigure/server.h>
@@ -29,7 +31,23 @@ protected:
   virtual void cameraInfoCB(const sensor_msgs::CameraInfoConstPtr& camera_info_msg);
   virtual void depthImageCB(const sensor_msgs::ImageConstPtr& depth_image_msg);
 
-  std::shared_ptr<dynamic_reconfigure::Server<PlaneCalibrationConfig> > reconfigure_server_;
+  virtual void updateMaxDeviationPlanesImages();
+  virtual std::vector<Eigen::Affine3d> getMaxDeviationTransforms();
+  virtual Eigen::MatrixXf getTiltedPlaneImage(Eigen::Affine3d tilt_transform);
+  virtual void publishMaxDeviationPlanes();
+
+  CameraModel camera_model_;
+  std::mutex ground_offset_mutex_;
+  Eigen::Vector3d ground_plane_offset_;
+
+  std::atomic<double> max_deviation_;
+  std::atomic<bool> update_max_deviation_planes_;
+  std::vector<Eigen::MatrixXf> max_deviation_planes_images_;
+
+  std::atomic<bool> use_manual_ground_transform_;
+
+  std::shared_ptr<DepthVisualizer> depth_visualizer_;
+  std::shared_ptr<dynamic_reconfigure::Server<PlaneCalibrationConfig>> reconfigure_server_;
 
   std::atomic<bool> debug_;
   std::atomic<double> x_offset_;
@@ -39,10 +57,6 @@ protected:
   std::atomic<double> px_offset_;
   std::atomic<double> py_offset_;
   std::atomic<double> pz_offset_;
-
-  CameraModel camera_model_;
-
-  std::shared_ptr<DepthVisualizer> depth_visualizer_;
 
   ros::Publisher pub_candidate_points_;
   ros::Publisher pub_plane_points_;

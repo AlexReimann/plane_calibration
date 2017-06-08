@@ -3,6 +3,7 @@ project(plane_calibration)
 
 find_package(catkin REQUIRED COMPONENTS
   ecl_build
+  ecl_geometry
   cmake_modules
   roscpp
   nodelet
@@ -28,6 +29,7 @@ catkin_package(
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
         ecl_build
+        ecl_geometry
         roscpp
         nodelet
         dynamic_reconfigure

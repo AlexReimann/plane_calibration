@@ -10,6 +10,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>ecl_build</build_depend>
+  <build_depend>ecl_geometry</build_depend>
   <build_depend>cmake_modules</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>nodelet</build_depend>
@@ -22,6 +23,7 @@
   <build_depend>tf2_ros</build_depend>
 
   <run_depend>ecl_build</run_depend>
+  <run_depend>ecl_geometry</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>nodelet</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
