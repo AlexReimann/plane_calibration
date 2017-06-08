@@ -3,7 +3,6 @@
 
 #include <atomic>
 #include <mutex>
-#include <vector>
 #include <Eigen/Dense>
 
 #include <nodelet/nodelet.h>
@@ -34,6 +33,7 @@ protected:
 
   virtual void publishMaxDeviationPlanes();
 
+  CameraModel camera_model_;
   PlaneCalibration plane_calibration_;
   Eigen::Vector3d ground_plane_offset_;
 
@@ -48,6 +48,7 @@ protected:
   std::atomic<double> px_offset_;
   std::atomic<double> py_offset_;
   std::atomic<double> pz_offset_;
+  std::atomic<double> max_noise_;
 
   ros::Publisher pub_candidate_points_;
   ros::Publisher pub_plane_points_;

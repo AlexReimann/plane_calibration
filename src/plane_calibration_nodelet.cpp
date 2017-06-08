@@ -19,6 +19,7 @@ namespace plane_calibration
 PlaneCalibrationNodelet::PlaneCalibrationNodelet()
 {
   debug_ = false;
+  max_noise_ = 0.0;
 }
 
 void PlaneCalibrationNodelet::onInit()
@@ -59,9 +60,10 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   y_offset_ = config.y;
   z_offset_ = config.z;
 
-  px_offset_ = config.px;
-  py_offset_ = config.py;
-  pz_offset_ = config.pz;
+  px_offset_ = ecl::degrees_to_radians(config.px_degree);
+  py_offset_ = ecl::degrees_to_radians(config.py_degree);
+  pz_offset_ = ecl::degrees_to_radians(config.pz_degree);
+  max_noise_ = config.max_noise;
 
   Eigen::Vector3d ground_plane_offset = ground_plane_offset_;
   if (config.use_manual_ground_transform)
@@ -82,9 +84,9 @@ void PlaneCalibrationNodelet::cameraInfoCB(const sensor_msgs::CameraInfoConstPtr
 
   depth_visualizer_->setCameraModel(pinhole_camera_model);
 
-  CameraModel camera_model(pinhole_camera_model.cx(), pinhole_camera_model.cy(), pinhole_camera_model.fx(),
-                           pinhole_camera_model.fy(), camera_info_msg->width, camera_info_msg->height);
-  plane_calibration_.updateParameters(camera_model);
+  camera_model_.update(pinhole_camera_model.cx(), pinhole_camera_model.cy(), pinhole_camera_model.fx(),
+                       pinhole_camera_model.fy(), camera_info_msg->width, camera_info_msg->height);
+  plane_calibration_.updateParameters(camera_model_);
 }
 
 void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& depth_image_msg)
@@ -104,6 +106,39 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   {
     publishMaxDeviationPlanes();
   }
+
+  std::string frame_id = "camera_link";
+  Eigen::Matrix3d rotation;
+  rotation = Eigen::AngleAxisd(px_offset_, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(py_offset_, Eigen::Vector3d::UnitY())
+      * Eigen::AngleAxisd(pz_offset_, Eigen::Vector3d::UnitZ());
+
+  Eigen::AngleAxisd(px_offset_, Eigen::Vector3d::UnitX());
+
+  Eigen::Affine3d transform = Eigen::Translation3d(Eigen::Vector3d(x_offset_, y_offset_, z_offset_)) * rotation;
+  Eigen::MatrixXf plane_image_matrix = PlaneToDepthImage::convert(transform, camera_model_.getParameters());
+  Eigen::MatrixXf noise = Eigen::MatrixXf::Random(plane_image_matrix.rows(), plane_image_matrix.cols());
+  Eigen::MatrixXf random_plane_image = plane_image_matrix + max_noise_ * noise;
+
+  depth_visualizer_->publishCloud("debug/test", random_plane_image, frame_id);
+
+  static tf2_ros::TransformBroadcaster transform_broadcaster;
+  geometry_msgs::TransformStamped transformStamped;
+  transformStamped.header.stamp = ros::Time::now();
+  transformStamped.header.frame_id = frame_id;
+  transformStamped.child_frame_id = "test_plane";
+  tf::transformEigenToMsg(transform, transformStamped.transform);
+  transform_broadcaster.sendTransform(transformStamped);
+
+  auto distances = plane_calibration_.getDistancesToMaxDeviations(random_plane_image);
+
+  depth_visualizer_->publishDouble("debug/x_positive", distances[0]);
+  depth_visualizer_->publishDouble("debug/y_positive", distances[1]);
+  depth_visualizer_->publishDouble("debug/x_negative", distances[2]);
+  depth_visualizer_->publishDouble("debug/y_negative", distances[3]);
+
+  depth_visualizer_->publishDouble("debug/x_diff", distances[0] - distances[2]);
+  depth_visualizer_->publishDouble("debug/y_diff", distances[1] - distances[3]);
 }
 
 void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
@@ -123,8 +158,8 @@ void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
     Eigen::Affine3d transform = planes[i].transform;
     std::string index_string = std::to_string(i);
 
-    depth_visualizer_->publishImage("/debug/images/max_deviation_" + index_string, plane_image_matrix, frame_id);
-    depth_visualizer_->publishCloud("/debug/clouds/max_deviation_" + index_string, plane_image_matrix, frame_id);
+    depth_visualizer_->publishImage("debug/images/max_deviation_" + index_string, plane_image_matrix, frame_id);
+    depth_visualizer_->publishCloud("debug/clouds/max_deviation_" + index_string, plane_image_matrix, frame_id);
 
     transformStamped.child_frame_id = "max_deviation_plane_" + index_string;
     tf::transformEigenToMsg(transform, transformStamped.transform);
