@@ -80,13 +80,23 @@ std::vector<Eigen::Affine3d> PlaneCalibration::getMaxDeviationTransforms()
   return tilt_transforms;
 }
 
-PlaneCalibration::PlanesWithTransforms PlaneCalibration::getDeviationPlanes()
+PlaneCalibration::PlanesWithTransforms PlaneCalibration::getDeviationPlanes() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return max_deviation_planes_images_;
 }
 
-std::vector<double> PlaneCalibration::getDistancesToMaxDeviations(const Eigen::MatrixXf& plane)
+std::pair<double, double> PlaneCalibration::getXYDistanceDiff(const Eigen::MatrixXf& plane) const
+{
+  auto distances = getDistancesToMaxDeviations(plane);
+
+  double x_diff = distances[2] - distances[0];
+  double y_diff = distances[3] - distances[1];
+
+  return std::make_pair(x_diff, y_diff);
+}
+
+std::vector<double> PlaneCalibration::getDistancesToMaxDeviations(const Eigen::MatrixXf& plane) const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<double> distances;

@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <vector>
+#include <utility>
 #include <Eigen/Dense>
 
 #include "camera_model.hpp"
@@ -49,16 +50,17 @@ public:
   void updateParameters(const Parameters& parameters);
 
   virtual bool updateMaxDeviationPlanesIfNeeded();
-  virtual PlanesWithTransforms getDeviationPlanes();
+  virtual PlanesWithTransforms getDeviationPlanes() const;
 
-  virtual std::vector<double> getDistancesToMaxDeviations(const Eigen::MatrixXf& plane);
+  virtual std::pair<double, double> getXYDistanceDiff(const Eigen::MatrixXf& plane) const;
+  virtual std::vector<double> getDistancesToMaxDeviations(const Eigen::MatrixXf& plane) const;
 
 protected:
   virtual void updateMaxDeviationPlanesImages();
   virtual std::vector<Eigen::Affine3d> getMaxDeviationTransforms();
 
   CameraModel camera_model_;
-  std::mutex mutex_;
+  mutable std::mutex mutex_;
   Parameters parameters_;
 
   bool update_max_deviation_planes_;
