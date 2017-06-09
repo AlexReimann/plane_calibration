@@ -93,9 +93,8 @@ std::vector<double> PlaneCalibration::getDistancesToMaxDeviations(const Eigen::M
 
   for (int i = 0; i < max_deviation_planes_images_.size(); ++i)
   {
-    Eigen::MatrixXf plane_copy = Eigen::MatrixXf(plane);
     Eigen::MatrixXf deviation_plane = max_deviation_planes_images_[i].plane;
-    Eigen::MatrixXf difference = (plane_copy - deviation_plane).cwiseAbs2();
+    Eigen::MatrixXf difference = (plane - deviation_plane).cwiseAbs2();
     double distance = difference.sum();
 
     //kind of normalization, not perfect though

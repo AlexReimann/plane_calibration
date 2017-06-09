@@ -12,7 +12,7 @@ MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
 {
   MatrixXd result_image_matrix;
 
-  Vector3d translation = plane_transformation.translation().const_cast_derived();
+  Vector3d translation = plane_transformation.translation();
   double distance = translation.norm();
   int height = camera_model_paramaters.height_;
 
