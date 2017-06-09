@@ -33,6 +33,8 @@ protected:
 
   virtual void publishMaxDeviationPlanes();
 
+  void test();
+
   CameraModel camera_model_;
   PlaneCalibration plane_calibration_;
   Eigen::Vector3d ground_plane_offset_;

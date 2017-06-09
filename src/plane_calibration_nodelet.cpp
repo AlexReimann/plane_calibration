@@ -107,6 +107,37 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
     publishMaxDeviationPlanes();
   }
 
+  test();
+}
+
+void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
+{
+  static tf2_ros::TransformBroadcaster transform_broadcaster;
+  geometry_msgs::TransformStamped transformStamped;
+
+  transformStamped.header.stamp = ros::Time::now();
+  std::string frame_id = "camera_link";
+  transformStamped.header.frame_id = frame_id;
+
+  PlaneCalibration::PlanesWithTransforms planes = plane_calibration_.getDeviationPlanes();
+
+  for (int i = 0; i < planes.size(); ++i)
+  {
+    Eigen::MatrixXf plane_image_matrix = planes[i].plane;
+    Eigen::Affine3d transform = planes[i].transform;
+    std::string index_string = std::to_string(i);
+
+    depth_visualizer_->publishImage("debug/images/max_deviation_" + index_string, plane_image_matrix, frame_id);
+    depth_visualizer_->publishCloud("debug/clouds/max_deviation_" + index_string, plane_image_matrix, frame_id);
+
+    transformStamped.child_frame_id = "max_deviation_plane_" + index_string;
+    tf::transformEigenToMsg(transform, transformStamped.transform);
+    transform_broadcaster.sendTransform(transformStamped);
+  }
+}
+
+void PlaneCalibrationNodelet::test()
+{
   std::string frame_id = "camera_link";
   Eigen::Matrix3d rotation;
   rotation = Eigen::AngleAxisd(px_offset_, Eigen::Vector3d::UnitX())
@@ -137,34 +168,29 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   depth_visualizer_->publishDouble("debug/x_negative", distances[2]);
   depth_visualizer_->publishDouble("debug/y_negative", distances[3]);
 
-  depth_visualizer_->publishDouble("debug/x_diff", distances[0] - distances[2]);
-  depth_visualizer_->publishDouble("debug/y_diff", distances[1] - distances[3]);
-}
+  double x_diff = distances[2] - distances[0];
+  double y_diff = distances[3] - distances[1];
+  depth_visualizer_->publishDouble("debug/x_diff", x_diff);
+  depth_visualizer_->publishDouble("debug/y_diff", y_diff);
 
-void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
-{
-  static tf2_ros::TransformBroadcaster transform_broadcaster;
-  geometry_msgs::TransformStamped transformStamped;
+  double magic_multiplier_x = 0.018485;
+  double magic_multiplier_y = 0.013918;
+  double px_estimation = magic_multiplier_x * x_diff;
+  double py_estimation = magic_multiplier_y * y_diff;
+  depth_visualizer_->publishDouble("debug/px_estimated", ecl::radians_to_degrees(px_estimation));
+  depth_visualizer_->publishDouble("debug/py_estimated", ecl::radians_to_degrees(py_estimation));
 
-  transformStamped.header.stamp = ros::Time::now();
-  std::string frame_id = "camera_link";
-  transformStamped.header.frame_id = frame_id;
+  double px_estimation_abs_error = px_estimation - px_offset_;
+  double py_estimation_abs_error = py_estimation - py_offset_;
 
-  PlaneCalibration::PlanesWithTransforms planes = plane_calibration_.getDeviationPlanes();
+  depth_visualizer_->publishDouble("debug/px_estimation_abs_error", px_estimation_abs_error);
+  depth_visualizer_->publishDouble("debug/py_estimation_abs_error", py_estimation_abs_error);
 
-  for (int i = 0; i < planes.size(); ++i)
-  {
-    Eigen::MatrixXf plane_image_matrix = planes[i].plane;
-    Eigen::Affine3d transform = planes[i].transform;
-    std::string index_string = std::to_string(i);
+  double px_estimation_error = px_offset_ == 0.0 ? 0.0 : px_estimation_abs_error / px_offset_;
+  double py_estimation_error = py_offset_ == 0.0 ? 0.0 : py_estimation_abs_error / py_offset_;
 
-    depth_visualizer_->publishImage("debug/images/max_deviation_" + index_string, plane_image_matrix, frame_id);
-    depth_visualizer_->publishCloud("debug/clouds/max_deviation_" + index_string, plane_image_matrix, frame_id);
-
-    transformStamped.child_frame_id = "max_deviation_plane_" + index_string;
-    tf::transformEigenToMsg(transform, transformStamped.transform);
-    transform_broadcaster.sendTransform(transformStamped);
-  }
+  depth_visualizer_->publishDouble("debug/px_estimation_error", px_estimation_error);
+  depth_visualizer_->publishDouble("debug/py_estimation_error", py_estimation_error);
 }
 
 } /* end namespace */
