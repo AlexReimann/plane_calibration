@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <memory>
 #include <Eigen/Dense>
 
 #include <nodelet/nodelet.h>
@@ -14,6 +15,7 @@
 
 #include "camera_model.hpp"
 #include "plane_calibration.hpp"
+#include "magic_multiplier_estimation.hpp"
 #include "depth_visualizer.hpp"
 
 namespace plane_calibration
@@ -36,7 +38,10 @@ protected:
   void test();
 
   CameraModel camera_model_;
-  PlaneCalibration plane_calibration_;
+  PlaneCalibrationPtr plane_calibration_;
+  MagicMultiplierEstimationPtr magic_estimator_;
+
+  std::atomic<double> max_deviation_;
   Eigen::Vector3d ground_plane_offset_;
 
   std::shared_ptr<DepthVisualizer> depth_visualizer_;

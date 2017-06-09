@@ -4,6 +4,7 @@
 #include <mutex>
 #include <vector>
 #include <utility>
+#include <memory>
 #include <Eigen/Dense>
 
 #include "camera_model.hpp"
@@ -66,6 +67,7 @@ protected:
   bool update_max_deviation_planes_;
   std::vector<PlaneWithTransform> max_deviation_planes_images_;
 };
+typedef std::shared_ptr<PlaneCalibration> PlaneCalibrationPtr;
 
 } /* end namespace */
 

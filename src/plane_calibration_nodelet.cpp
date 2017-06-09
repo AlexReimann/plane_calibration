@@ -20,6 +20,7 @@ PlaneCalibrationNodelet::PlaneCalibrationNodelet()
 {
   debug_ = false;
   max_noise_ = 0.0;
+  plane_calibration_ = std::make_shared<PlaneCalibration>();
 }
 
 void PlaneCalibrationNodelet::onInit()
@@ -65,6 +66,8 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   pz_offset_ = ecl::degrees_to_radians(config.pz_degree);
   max_noise_ = config.max_noise;
 
+  max_deviation_ = ecl::degrees_to_radians(config.max_deviation_degrees);
+
   Eigen::Vector3d ground_plane_offset = ground_plane_offset_;
   if (config.use_manual_ground_transform)
   {
@@ -74,7 +77,7 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   PlaneCalibration::Parameters parameters;
   parameters.ground_plane_offset_ = ground_plane_offset;
   parameters.max_deviation_ = ecl::degrees_to_radians(config.max_deviation_degrees);
-  plane_calibration_.updateParameters(parameters);
+  plane_calibration_->updateParameters(parameters);
 }
 
 void PlaneCalibrationNodelet::cameraInfoCB(const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
@@ -86,7 +89,7 @@ void PlaneCalibrationNodelet::cameraInfoCB(const sensor_msgs::CameraInfoConstPtr
 
   camera_model_.update(pinhole_camera_model.cx(), pinhole_camera_model.cy(), pinhole_camera_model.fx(),
                        pinhole_camera_model.fy(), camera_info_msg->width, camera_info_msg->height);
-  plane_calibration_.updateParameters(camera_model_);
+  plane_calibration_->updateParameters(camera_model_);
 }
 
 void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& depth_image_msg)
@@ -100,14 +103,25 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
     return;
   }
 
-  plane_calibration_.updateMaxDeviationPlanesIfNeeded();
+  plane_calibration_->updateMaxDeviationPlanesIfNeeded();
 
   if (debug_)
   {
     publishMaxDeviationPlanes();
   }
 
-  test();
+  if (!magic_estimator_)
+  {
+    magic_estimator_ = std::make_shared<MagicMultiplierEstimation>(camera_model_, plane_calibration_, z_offset_,
+                                                                   max_deviation_, max_deviation_);
+  }
+
+  MagicMultiplierEstimation::Result magic_result = magic_estimator_->estimate(true);
+
+  std::cout << "magic: " << magic_result.multiplier_x << ", " << magic_result.multiplier_y << std::endl;
+  std::cout << "error: " << magic_result.max_error_x_degree << ", " << magic_result.max_error_y_degree << std::endl;
+  std::cout << "cross: " << magic_result.max_cross_error_x_degree << ", " << magic_result.max_error_y_degree
+      << std::endl;
 }
 
 void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
@@ -119,7 +133,7 @@ void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
   std::string frame_id = "camera_link";
   transformStamped.header.frame_id = frame_id;
 
-  PlaneCalibration::PlanesWithTransforms planes = plane_calibration_.getDeviationPlanes();
+  PlaneCalibration::PlanesWithTransforms planes = plane_calibration_->getDeviationPlanes();
 
   for (int i = 0; i < planes.size(); ++i)
   {
@@ -161,7 +175,7 @@ void PlaneCalibrationNodelet::test()
   tf::transformEigenToMsg(transform, transformStamped.transform);
   transform_broadcaster.sendTransform(transformStamped);
 
-  auto distances = plane_calibration_.getDistancesToMaxDeviations(random_plane_image);
+  auto distances = plane_calibration_->getDistancesToMaxDeviations(random_plane_image);
 
   depth_visualizer_->publishDouble("debug/x_positive", distances[0]);
   depth_visualizer_->publishDouble("debug/y_positive", distances[1]);
