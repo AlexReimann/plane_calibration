@@ -21,6 +21,13 @@ void DepthVisualizer::setCameraModel(const image_geometry::PinholeCameraModel& c
 
 void DepthVisualizer::publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id)
 {
+  addPublisherIfNotExist<sensor_msgs::Image>(topic);
+
+  if (publishers_[topic].getNumSubscribers() == 0)
+  {
+    return;
+  }
+
   sensor_msgs::Image image_msg;
   image_msg.header.frame_id = frame_id;
   ImageMsgEigenConverter::convert(image_matrix, image_msg);
@@ -39,6 +46,13 @@ void DepthVisualizer::publishImage(const std::string& topic, const sensor_msgs::
 
 void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id)
 {
+  addPublisherIfNotExist<sensor_msgs::PointCloud2>(topic);
+
+  if (publishers_[topic].getNumSubscribers() == 0)
+  {
+    return;
+  }
+
   sensor_msgs::Image image_msg;
   image_msg.header.frame_id = frame_id;
   ImageMsgEigenConverter::convert(image_matrix, image_msg);
@@ -53,6 +67,31 @@ void DepthVisualizer::publishCloud(const std::string& topic, const sensor_msgs::
   {
     sensor_msgs::PointCloud2Ptr point_cloud_msg_ptr = imageMsgToPointCloud(image_msg);
     publishers_[topic].publish(point_cloud_msg_ptr);
+  }
+}
+
+void DepthVisualizer::publishDouble(const std::string& topic, const double& value)
+{
+  addPublisherIfNotExist<std_msgs::Float32>(topic);
+
+  if (publishers_[topic].getNumSubscribers() > 0)
+  {
+    std_msgs::Float32 msg;
+    msg.data = value;
+    publishers_[topic].publish(msg);
+  }
+}
+
+template<typename MsgType>
+void DepthVisualizer::addPublisherIfNotExist(const std::string& topic)
+{
+  auto publisher_match = publishers_.find(topic);
+  bool publisher_exists_already = publisher_match != publishers_.end();
+
+  if (!publisher_exists_already)
+  {
+    publishers_.emplace(topic, node_handle_.advertise<MsgType>(topic, 1));
+    return;
   }
 }
 
@@ -84,31 +123,6 @@ sensor_msgs::PointCloud2Ptr DepthVisualizer::floatImageMsgToPointCloud(
 
   depth_image_proc::convert<float>(image_msg_ptr, cloud_msg_ptr, camera_model);
   return cloud_msg_ptr;
-}
-
-template<typename MsgType>
-void DepthVisualizer::addPublisherIfNotExist(const std::string& topic)
-{
-  auto publisher_match = publishers_.find(topic);
-  bool publisher_exists_already = publisher_match != publishers_.end();
-
-  if (!publisher_exists_already)
-  {
-    publishers_.emplace(topic, node_handle_.advertise<MsgType>(topic, 1));
-    return;
-  }
-}
-
-void DepthVisualizer::publishDouble(const std::string& topic, const double& value)
-{
-  addPublisherIfNotExist<std_msgs::Float32>(topic);
-
-  if (publishers_[topic].getNumSubscribers() > 0)
-  {
-    std_msgs::Float32 msg;
-    msg.data = value;
-    publishers_[topic].publish(msg);
-  }
 }
 
 } /* end namespace */
