@@ -110,18 +110,9 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
     publishMaxDeviationPlanes();
   }
 
-  if (!magic_estimator_)
-  {
-    magic_estimator_ = std::make_shared<MagicMultiplierEstimation>(camera_model_, plane_calibration_, z_offset_,
-                                                                   max_deviation_, max_deviation_);
-  }
-
-  MagicMultiplierEstimation::Result magic_result = magic_estimator_->estimate(true);
-
-  std::cout << "magic: " << magic_result.multiplier_x << ", " << magic_result.multiplier_y << std::endl;
-  std::cout << "error: " << magic_result.max_error_x_degree << ", " << magic_result.max_error_y_degree << std::endl;
-  std::cout << "cross: " << magic_result.max_cross_error_x_degree << ", " << magic_result.max_error_y_degree
-      << std::endl;
+  magic_estimator_ = std::make_shared<MagicMultiplierEstimation>(camera_model_, plane_calibration_, z_offset_,
+                                                                 max_deviation_, max_deviation_);
+  test();
 }
 
 void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
@@ -158,8 +149,6 @@ void PlaneCalibrationNodelet::test()
       * Eigen::AngleAxisd(py_offset_, Eigen::Vector3d::UnitY())
       * Eigen::AngleAxisd(pz_offset_, Eigen::Vector3d::UnitZ());
 
-  Eigen::AngleAxisd(px_offset_, Eigen::Vector3d::UnitX());
-
   Eigen::Affine3d transform = Eigen::Translation3d(Eigen::Vector3d(x_offset_, y_offset_, z_offset_)) * rotation;
   Eigen::MatrixXf plane_image_matrix = PlaneToDepthImage::convert(transform, camera_model_.getParameters());
   Eigen::MatrixXf noise = Eigen::MatrixXf::Random(plane_image_matrix.rows(), plane_image_matrix.cols());
@@ -182,23 +171,25 @@ void PlaneCalibrationNodelet::test()
   depth_visualizer_->publishDouble("debug/x_negative", distances[2]);
   depth_visualizer_->publishDouble("debug/y_negative", distances[3]);
 
-  double x_diff = distances[2] - distances[0];
-  double y_diff = distances[3] - distances[1];
-  depth_visualizer_->publishDouble("debug/x_diff", x_diff);
-  depth_visualizer_->publishDouble("debug/y_diff", y_diff);
+  auto distances_diffs = plane_calibration_->getXYDistanceDiff(random_plane_image);
+  depth_visualizer_->publishDouble("debug/x_diff", distances_diffs.first);
+  depth_visualizer_->publishDouble("debug/y_diff", distances_diffs.second);
 
-  double magic_multiplier_x = 0.018485;
-  double magic_multiplier_y = 0.013918;
-  double px_estimation = magic_multiplier_x * x_diff;
-  double py_estimation = magic_multiplier_y * y_diff;
-  depth_visualizer_->publishDouble("debug/px_estimated", ecl::radians_to_degrees(px_estimation));
-  depth_visualizer_->publishDouble("debug/py_estimated", ecl::radians_to_degrees(py_estimation));
+  bool calculate_errors = false;
+  MagicMultiplierEstimation::Result magic_result = magic_estimator_->estimate(calculate_errors);
+
+  double px_estimation = magic_result.multiplier_x * distances_diffs.first;
+  double py_estimation = magic_result.multiplier_y * distances_diffs.second;
+  depth_visualizer_->publishDouble("debug/px_degree_estimated", ecl::radians_to_degrees(px_estimation));
+  depth_visualizer_->publishDouble("debug/py_degree_estimated", ecl::radians_to_degrees(py_estimation));
 
   double px_estimation_abs_error = px_estimation - px_offset_;
   double py_estimation_abs_error = py_estimation - py_offset_;
 
-  depth_visualizer_->publishDouble("debug/px_estimation_abs_error", px_estimation_abs_error);
-  depth_visualizer_->publishDouble("debug/py_estimation_abs_error", py_estimation_abs_error);
+  depth_visualizer_->publishDouble("debug/px_estimation_abs_error_degree",
+                                   ecl::radians_to_degrees(px_estimation_abs_error));
+  depth_visualizer_->publishDouble("debug/py_estimation_abs_error_degree",
+                                   ecl::radians_to_degrees(py_estimation_abs_error));
 
   double px_estimation_error = px_offset_ == 0.0 ? 0.0 : px_estimation_abs_error / px_offset_;
   double py_estimation_error = py_offset_ == 0.0 ? 0.0 : py_estimation_abs_error / py_offset_;
