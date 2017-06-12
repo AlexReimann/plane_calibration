@@ -43,6 +43,8 @@ public:
 
   PlaneCalibration();
 
+  PlaneCalibration(const PlaneCalibration& object);
+
   virtual ~PlaneCalibration()
   {
   }

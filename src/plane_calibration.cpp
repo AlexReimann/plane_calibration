@@ -10,6 +10,18 @@ PlaneCalibration::PlaneCalibration()
   update_max_deviation_planes_ = true;
 }
 
+PlaneCalibration::PlaneCalibration(const PlaneCalibration& object)
+{
+  std::lock_guard<std::mutex> lock(object.mutex_);
+
+  camera_model_.update(object.camera_model_.getParameters());
+  parameters_ = object.parameters_;
+
+  update_max_deviation_planes_ = object.update_max_deviation_planes_;
+  max_deviation_planes_images_ = object.max_deviation_planes_images_;
+
+}
+
 void PlaneCalibration::updateParameters(const CameraModel& camera_model)
 {
   camera_model_.update(camera_model.getParameters());
