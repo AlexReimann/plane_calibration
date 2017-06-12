@@ -43,13 +43,13 @@ bool PlaneCalibration::updateMaxDeviationPlanesIfNeeded()
       return false;
     }
   }
-  updateMaxDeviationPlanesImages();
+  updateMaxDeviationPlanesImages(parameters_.rotation_);
   return true;
 }
 
-void PlaneCalibration::updateMaxDeviationPlanesImages()
+void PlaneCalibration::updateMaxDeviationPlanesImages(const Eigen::AngleAxisd& rotation)
 {
-  if (!camera_model_.initialized() || !update_max_deviation_planes_)
+  if (!camera_model_.initialized())
   {
     return;
   }
@@ -57,7 +57,7 @@ void PlaneCalibration::updateMaxDeviationPlanesImages()
   std::lock_guard<std::mutex> lock(mutex_);
 
   max_deviation_planes_images_.clear();
-  std::vector<Eigen::Affine3d> transforms = getMaxDeviationTransforms();
+  std::vector<Eigen::Affine3d> transforms = getMaxDeviationTransforms(rotation);
 
   for (int i = 0; i < transforms.size(); ++i)
   {
@@ -71,7 +71,7 @@ void PlaneCalibration::updateMaxDeviationPlanesImages()
   update_max_deviation_planes_ = false;
 }
 
-std::vector<Eigen::Affine3d> PlaneCalibration::getMaxDeviationTransforms()
+std::vector<Eigen::Affine3d> PlaneCalibration::getMaxDeviationTransforms(const Eigen::AngleAxisd& rotation)
 {
   double max_deviation = parameters_.max_deviation_;
   Eigen::Translation3d translation = Eigen::Translation3d(parameters_.ground_plane_offset_);
@@ -83,11 +83,11 @@ std::vector<Eigen::Affine3d> PlaneCalibration::getMaxDeviationTransforms()
   Eigen::AngleAxisd y_tilt_negative(-max_deviation, Eigen::Vector3d::UnitY());
 
   std::vector<Eigen::Affine3d> tilt_transforms;
-  tilt_transforms.push_back(translation * x_tilt_positive);
-  tilt_transforms.push_back(translation * y_tilt_positive);
+  tilt_transforms.push_back(translation * x_tilt_positive * rotation);
+  tilt_transforms.push_back(translation * y_tilt_positive * rotation);
 
-  tilt_transforms.push_back(translation * x_tilt_negative);
-  tilt_transforms.push_back(translation * y_tilt_negative);
+  tilt_transforms.push_back(translation * x_tilt_negative * rotation);
+  tilt_transforms.push_back(translation * y_tilt_negative * rotation);
 
   return tilt_transforms;
 }
@@ -96,6 +96,41 @@ PlaneCalibration::PlanesWithTransforms PlaneCalibration::getDeviationPlanes() co
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return max_deviation_planes_images_;
+}
+
+Eigen::AngleAxisd PlaneCalibration::estimateRotation(const Eigen::MatrixXf& plane, const double& x_multiplier,
+                                                     const double& y_multiplier, const int& iterations,
+                                                     const double& step_size)
+{
+  double px_estimation = 0.0;
+  double py_estimation = 0.0;
+
+  Eigen::AngleAxisd rotation = parameters_.rotation_;
+
+  for (int i = 0; i < iterations; ++i)
+  {
+    auto estimation = estimateAngles(plane, x_multiplier, y_multiplier);
+    px_estimation = estimation.first;
+    py_estimation = estimation.second;
+
+    rotation = rotation * Eigen::AngleAxisd(px_estimation * step_size, Eigen::Vector3d::UnitX())
+        * Eigen::AngleAxisd(py_estimation * step_size, Eigen::Vector3d::UnitY());
+    updateMaxDeviationPlanesImages(rotation);
+  }
+
+  updateMaxDeviationPlanesImages(parameters_.rotation_);
+  return rotation;
+}
+
+std::pair<double, double> PlaneCalibration::estimateAngles(const Eigen::MatrixXf& plane, const double& x_multiplier,
+                                                           const double& y_multiplier)
+{
+  auto distances_diffs = getXYDistanceDiff(plane);
+
+  double px_estimation = x_multiplier * distances_diffs.first;
+  double py_estimation = y_multiplier * distances_diffs.second;
+
+  return std::make_pair(px_estimation, py_estimation);
 }
 
 std::pair<double, double> PlaneCalibration::getXYDistanceDiff(const Eigen::MatrixXf& plane) const
