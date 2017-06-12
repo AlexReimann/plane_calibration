@@ -112,7 +112,9 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
 
   magic_estimator_ = std::make_shared<MagicMultiplierEstimation>(camera_model_, plane_calibration_, z_offset_,
                                                                  max_deviation_, max_deviation_);
-  test();
+
+  testCalibration();
+//  test();
 }
 
 void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
@@ -139,6 +141,43 @@ void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
     tf::transformEigenToMsg(transform, transformStamped.transform);
     transform_broadcaster.sendTransform(transformStamped);
   }
+}
+
+void PlaneCalibrationNodelet::testCalibration()
+{
+  //construct plane we want to fit
+  std::string frame_id = "camera_link";
+  Eigen::Matrix3d rotation;
+  rotation = Eigen::AngleAxisd(px_offset_, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(py_offset_, Eigen::Vector3d::UnitY())
+      * Eigen::AngleAxisd(pz_offset_, Eigen::Vector3d::UnitZ());
+
+  Eigen::Affine3d transform = Eigen::Translation3d(Eigen::Vector3d(x_offset_, y_offset_, z_offset_)) * rotation;
+  Eigen::MatrixXf plane_image_matrix = PlaneToDepthImage::convert(transform, camera_model_.getParameters());
+
+  //get initial estimate
+  bool calculate_errors = false;
+  MagicMultiplierEstimation::Result magic_result = magic_estimator_->estimate(calculate_errors);
+
+  Eigen::AngleAxisd estimation = plane_calibration_->estimateRotation(plane_image_matrix, magic_result.multiplier_x,
+                                                                      magic_result.multiplier_y, 20);
+
+  static tf2_ros::TransformBroadcaster transform_broadcaster;
+  geometry_msgs::TransformStamped transformStamped;
+  transformStamped.header.stamp = ros::Time::now();
+  transformStamped.header.frame_id = frame_id;
+
+  transformStamped.child_frame_id = "test_plane";
+  tf::transformEigenToMsg(transform, transformStamped.transform);
+  transform_broadcaster.sendTransform(transformStamped);
+
+  transformStamped.child_frame_id = "result";
+  tf::transformEigenToMsg(Eigen::Translation3d(Eigen::Vector3d(x_offset_, y_offset_, z_offset_)) * estimation,
+                          transformStamped.transform);
+  transform_broadcaster.sendTransform(transformStamped);
+
+  std::cout << "actual: " << std::endl << rotation << std::endl;
+  std::cout << "estimated: " << std::endl << estimation.matrix() << std::endl;
 }
 
 void PlaneCalibrationNodelet::test()

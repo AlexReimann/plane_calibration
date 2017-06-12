@@ -35,6 +35,7 @@ protected:
 
   virtual void publishMaxDeviationPlanes();
 
+  void testCalibration();
   void test();
 
   CameraModel camera_model_;
