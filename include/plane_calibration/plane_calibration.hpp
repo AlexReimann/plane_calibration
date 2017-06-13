@@ -66,6 +66,7 @@ public:
 
   virtual bool updateMaxDeviationPlanesIfNeeded();
   virtual PlanesWithTransforms getDeviationPlanes() const;
+  virtual PlanesWithTransforms getDeviationPlanes(Eigen::AngleAxisd rotation);
 
   Eigen::AngleAxisd estimateRotation(const Eigen::MatrixXf& plane, const double& x_multiplier,
                                      const double& y_multiplier, const int& iterations, const double& step_size = 0.5);

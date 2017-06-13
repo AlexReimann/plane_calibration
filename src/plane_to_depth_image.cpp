@@ -15,9 +15,8 @@ PlaneToDepthImage::Errors PlaneToDepthImage::getErrors(const Eigen::Affine3d& pl
 
   Eigen::MatrixXf difference = (plane - image_matrix).cwiseAbs();
 
+  // nan == nan gives false
   int not_nan_count = (difference.array() == difference.array()).count();
-
-  std::cout << "not_nan_count: " << not_nan_count << std::endl;
 
   difference = difference.unaryExpr([](float v)
   { return std::isnan(v) ? 0.0 : v;});

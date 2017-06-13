@@ -27,6 +27,7 @@ void PlaneCalibration::updateParameters(const CameraModel& camera_model)
 {
   std::lock_guard<std::mutex> lock(mutex_);
   camera_model_.update(camera_model.getParameters());
+  update_max_deviation_planes_ = true;
 }
 
 void PlaneCalibration::updateParameters(const Parameters& parameters)
@@ -102,6 +103,16 @@ PlaneCalibration::PlanesWithTransforms PlaneCalibration::getDeviationPlanes() co
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return max_deviation_planes_images_;
+}
+
+PlaneCalibration::PlanesWithTransforms PlaneCalibration::getDeviationPlanes(Eigen::AngleAxisd rotation)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  updateMaxDeviationPlanesImages_(rotation);
+  PlaneCalibration::PlanesWithTransforms max_deviation_planes_images = max_deviation_planes_images_;
+  updateMaxDeviationPlanesImages_(parameters_.rotation_);
+  return max_deviation_planes_images;
 }
 
 Eigen::AngleAxisd PlaneCalibration::estimateRotation(const Eigen::MatrixXf& plane, const double& x_multiplier,

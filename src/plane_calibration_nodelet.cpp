@@ -111,11 +111,6 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
 
   plane_calibration_->updateMaxDeviationPlanesIfNeeded();
 
-  if (debug_)
-  {
-    publishMaxDeviationPlanes();
-  }
-
   magic_estimator_ = std::make_shared<MagicMultiplierEstimation>(camera_model_, plane_calibration_, max_deviation_,
                                                                  max_deviation_);
 
@@ -145,7 +140,7 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
 
   PlaneCalibration::Parameters parameters = plane_calibration_->getParameters();
 
-  Eigen::Matrix3d rotation;
+  Eigen::AngleAxisd rotation;
   rotation = parameters.rotation_ * Eigen::AngleAxisd(one_shot_result.first, Eigen::Vector3d::UnitX())
       * Eigen::AngleAxisd(one_shot_result.second, Eigen::Vector3d::UnitY());
 
@@ -158,19 +153,13 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   depth_visualizer_->publishDouble("px_degree_estimated", ecl::radians_to_degrees(one_shot_result.first));
   depth_visualizer_->publishDouble("py_degree_estimated", ecl::radians_to_degrees(one_shot_result.second));
 
-  double px_estimation_abs_error = one_shot_result.first - px_offset_;
-  double py_estimation_abs_error = one_shot_result.second - py_offset_;
+  PlaneToDepthImage::Errors start_errors = PlaneToDepthImage::getErrors(parameters.getTransform(),
+                                                                        camera_model_.getParameters(), depth_matrix);
+  PlaneToDepthImage::Errors result_errors = PlaneToDepthImage::getErrors(transform, camera_model_.getParameters(),
+                                                                         depth_matrix);
 
-  depth_visualizer_->publishDouble("px_estimation_abs_error_degree", ecl::radians_to_degrees(px_estimation_abs_error));
-  depth_visualizer_->publishDouble("py_estimation_abs_error_degree", ecl::radians_to_degrees(py_estimation_abs_error));
-
-  std::string start_errors = PlaneToDepthImage::getErrors(parameters.getTransform(), camera_model_.getParameters(),
-                                                          depth_matrix).asPrintString();
-  std::string result_errors =
-      PlaneToDepthImage::getErrors(transform, camera_model_.getParameters(), depth_matrix).asPrintString();
-
-  std::cout << "start_errors: " << start_errors << std::endl;
-  std::cout << "result_errors: " << result_errors << std::endl;
+  std::cout << "start_errors: " << start_errors.asPrintString() << std::endl;
+  std::cout << "result_errors: " << result_errors.asPrintString() << std::endl;
 
   Eigen::MatrixXf result_plane = PlaneToDepthImage::convert(transform, camera_model_.getParameters());
   Eigen::MatrixXf start_plane = PlaneToDepthImage::convert(parameters.getTransform(), camera_model_.getParameters());
@@ -178,11 +167,19 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   depth_visualizer_->publishCloud("result_plane", result_plane, frame_id);
   depth_visualizer_->publishCloud("start_plane", start_plane, frame_id);
 
+  depth_visualizer_->publishDouble("result_mean_error__cm", result_errors.mean * 100.0);
+  depth_visualizer_->publishDouble("result_max_error__cm", result_errors.max * 100.0);
+
+  if (debug_)
+  {
+    publishMaxDeviationPlanes(rotation);
+  }
+
 //  testCalibration();
 //  test();
 }
 
-void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
+void PlaneCalibrationNodelet::publishMaxDeviationPlanes(Eigen::AngleAxisd rotation)
 {
   static tf2_ros::TransformBroadcaster transform_broadcaster;
   geometry_msgs::TransformStamped transformStamped;
@@ -191,7 +188,7 @@ void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
   std::string frame_id = "camera_depth_optical_frame";
   transformStamped.header.frame_id = frame_id;
 
-  PlaneCalibration::PlanesWithTransforms planes = plane_calibration_->getDeviationPlanes();
+  PlaneCalibration::PlanesWithTransforms planes = plane_calibration_->getDeviationPlanes(rotation);
 
   for (int i = 0; i < planes.size(); ++i)
   {
@@ -206,11 +203,6 @@ void PlaneCalibrationNodelet::publishMaxDeviationPlanes()
     tf::transformEigenToMsg(transform, transformStamped.transform);
     transform_broadcaster.sendTransform(transformStamped);
   }
-
-  Eigen::Matrix3d rotation;
-  rotation = Eigen::AngleAxisd(px_offset_, Eigen::Vector3d::UnitX())
-      * Eigen::AngleAxisd(py_offset_, Eigen::Vector3d::UnitY())
-      * Eigen::AngleAxisd(pz_offset_, Eigen::Vector3d::UnitZ());
 
   Eigen::Affine3d transform = Eigen::Translation3d(Eigen::Vector3d(x_offset_, y_offset_, z_offset_)) * rotation;
 

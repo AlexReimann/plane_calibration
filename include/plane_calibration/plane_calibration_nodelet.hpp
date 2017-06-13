@@ -33,7 +33,7 @@ protected:
   virtual void cameraInfoCB(const sensor_msgs::CameraInfoConstPtr& camera_info_msg);
   virtual void depthImageCB(const sensor_msgs::ImageConstPtr& depth_image_msg);
 
-  virtual void publishMaxDeviationPlanes();
+  virtual void publishMaxDeviationPlanes(Eigen::AngleAxisd rotation);
 
   void testCalibration();
   void test();
