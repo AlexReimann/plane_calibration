@@ -36,8 +36,8 @@ public:
     double multiplier_y;
   };
 
-  MagicMultiplierEstimation(CameraModel camera_model, PlaneCalibrationPtr plane_calibration, double z_offset = 2.0,
-                            double max_x_angle = 0.2, double max_y_angle = 0.2, double step_size = 0.001);
+  MagicMultiplierEstimation(CameraModel camera_model, PlaneCalibrationPtr plane_calibration, double max_x_angle = 0.2,
+                            double max_y_angle = 0.2, double step_size = 0.001);
 
   Result estimate(bool calculate_errors = false);
 
@@ -54,7 +54,6 @@ protected:
   CameraModel camera_model_;
   PlaneCalibrationPtr plane_calibration_;
 
-  double z_offset_;
   double max_x_angle_;
   double max_y_angle_;
   double step_size_;

@@ -9,13 +9,11 @@ namespace plane_calibration
 {
 
 MagicMultiplierEstimation::MagicMultiplierEstimation(CameraModel camera_model, PlaneCalibrationPtr plane_calibration,
-                                                     double z_offset, double max_x_angle, double max_y_angle,
-                                                     double step_size)
+                                                     double max_x_angle, double max_y_angle, double step_size)
 {
   camera_model_.update(camera_model.getParameters());
   plane_calibration_ = plane_calibration;
 
-  z_offset_ = z_offset;
   max_x_angle_ = max_x_angle;
   max_y_angle_ = max_y_angle;
   step_size_ = step_size;
@@ -24,7 +22,6 @@ MagicMultiplierEstimation::MagicMultiplierEstimation(CameraModel camera_model, P
 MagicMultiplierEstimation::Result MagicMultiplierEstimation::estimate(bool calculate_errors)
 {
   std::cout << "MagicMultiplierEstimation: Running estimation with parameters:" << std::endl;
-  std::cout << "MagicMultiplierEstimation: z_offset_:    " << z_offset_ << std::endl;
   std::cout << "MagicMultiplierEstimation: max_x_angle_: " << max_x_angle_ << std::endl;
   std::cout << "MagicMultiplierEstimation: max_y_angle_: " << max_y_angle_ << std::endl;
   std::cout << "MagicMultiplierEstimation: step_size_:   " << step_size_ << std::endl;
@@ -121,12 +118,13 @@ double MagicMultiplierEstimation::getYDistanceDiff(double angle) const
 
 std::pair<double, double> MagicMultiplierEstimation::getXYDistanceDiff(double x_angle, double y_angle) const
 {
+  PlaneCalibration::Parameters parameters = plane_calibration_->getParameters();
+
   Eigen::Matrix3d rotation;
-  rotation = Eigen::AngleAxisd(x_angle, Eigen::Vector3d::UnitX())
+  rotation = parameters.rotation_ * Eigen::AngleAxisd(x_angle, Eigen::Vector3d::UnitX())
       * Eigen::AngleAxisd(y_angle, Eigen::Vector3d::UnitY());
 
-  double zero_offset = 0.0;
-  Eigen::Affine3d transform = Eigen::Translation3d(Eigen::Vector3d(zero_offset, zero_offset, z_offset_)) * rotation;
+  Eigen::Affine3d transform = Eigen::Translation3d(parameters.ground_plane_offset_) * rotation;
   Eigen::MatrixXf plane_image_matrix = PlaneToDepthImage::convert(transform, camera_model_.getParameters());
 
   return plane_calibration_->getXYDistanceDiff(plane_image_matrix);

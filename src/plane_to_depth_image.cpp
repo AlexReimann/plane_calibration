@@ -7,6 +7,31 @@ namespace plane_calibration
 
 using namespace Eigen;
 
+PlaneToDepthImage::Errors PlaneToDepthImage::getErrors(const Eigen::Affine3d& plane_transformation,
+                                                       const CameraModel::Parameters& camera_model_paramaters,
+                                                       Eigen::MatrixXf image_matrix)
+{
+  Eigen::MatrixXf plane = convert(plane_transformation, camera_model_paramaters);
+
+  Eigen::MatrixXf difference = (plane - image_matrix).cwiseAbs();
+
+  int not_nan_count = (difference.array() == difference.array()).count();
+
+  std::cout << "not_nan_count: " << not_nan_count << std::endl;
+
+  difference = difference.unaryExpr([](float v)
+  { return std::isnan(v) ? 0.0 : v;});
+
+  double mean = difference.sum() / not_nan_count;
+
+  Errors errors;
+  errors.mean = mean;
+  errors.min = difference.minCoeff();
+  errors.max = difference.maxCoeff();
+
+  return errors;
+}
+
 MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
                                     const CameraModel::Parameters& camera_model_paramaters)
 {

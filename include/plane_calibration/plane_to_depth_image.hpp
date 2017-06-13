@@ -3,6 +3,7 @@
 
 #include <Eigen/Dense>
 #include <utility>
+#include <sstream>
 
 #include "camera_model.hpp"
 
@@ -12,6 +13,24 @@ namespace plane_calibration
 class PlaneToDepthImage
 {
 public:
+  class Errors
+  {
+  public:
+    std::string asPrintString()
+    {
+      std::ostringstream string_stream;
+      string_stream << mean << ", " << min << ", " << max;
+      return string_stream.str();
+    }
+
+    double mean;
+    double min;
+    double max;
+  };
+
+  static Errors getErrors(const Eigen::Affine3d& plane_transformation,
+                          const CameraModel::Parameters& camera_model_paramaters, Eigen::MatrixXf image_matrix);
+
   static Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation,
                                  const CameraModel::Parameters& camera_model_paramaters);
 

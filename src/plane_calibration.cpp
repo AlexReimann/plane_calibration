@@ -1,5 +1,6 @@
 #include "plane_calibration/plane_calibration.hpp"
 
+#include <iostream>
 #include "plane_calibration/plane_to_depth_image.hpp"
 
 namespace plane_calibration
@@ -33,6 +34,12 @@ void PlaneCalibration::updateParameters(const Parameters& parameters)
   std::lock_guard<std::mutex> lock(mutex_);
   parameters_ = parameters;
   update_max_deviation_planes_ = true;
+}
+
+PlaneCalibration::Parameters PlaneCalibration::getParameters() const
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  return parameters_;
 }
 
 bool PlaneCalibration::updateMaxDeviationPlanesIfNeeded()
@@ -82,11 +89,11 @@ std::vector<Eigen::Affine3d> PlaneCalibration::getMaxDeviationTransforms_(const 
   Eigen::AngleAxisd y_tilt_negative(-max_deviation, Eigen::Vector3d::UnitY());
 
   std::vector<Eigen::Affine3d> tilt_transforms;
-  tilt_transforms.push_back(translation * x_tilt_positive * rotation);
-  tilt_transforms.push_back(translation * y_tilt_positive * rotation);
+  tilt_transforms.push_back(translation * rotation * x_tilt_positive);
+  tilt_transforms.push_back(translation * rotation * y_tilt_positive);
 
-  tilt_transforms.push_back(translation * x_tilt_negative * rotation);
-  tilt_transforms.push_back(translation * y_tilt_negative * rotation);
+  tilt_transforms.push_back(translation * rotation * x_tilt_negative);
+  tilt_transforms.push_back(translation * rotation * y_tilt_negative);
 
   return tilt_transforms;
 }
@@ -134,6 +141,8 @@ std::pair<double, double> PlaneCalibration::estimateAngles_(const Eigen::MatrixX
 {
   auto distances_diffs = getXYDistanceDiff_(plane);
 
+  std::cout << "diffs: " << distances_diffs.first << ", " << distances_diffs.second << std::endl;
+
   double px_estimation = x_multiplier * distances_diffs.first;
   double py_estimation = y_multiplier * distances_diffs.second;
 
@@ -170,8 +179,13 @@ std::vector<double> PlaneCalibration::getDistancesToMaxDeviations_(const Eigen::
   {
     Eigen::MatrixXf deviation_plane = max_deviation_planes_images_[i].plane;
     Eigen::MatrixXf difference = (plane - deviation_plane).cwiseAbs2();
+
+    difference = difference.unaryExpr([](double v)
+    { return std::isnan(v) ? 0.0 : v;});
+
     double distance = difference.sum();
 
+    //TODO refactor because numbers are bad
     //kind of normalization, not perfect though
     if (i == 0 || i == 2)
     {

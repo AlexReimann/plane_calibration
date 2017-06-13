@@ -32,6 +32,12 @@ public:
       rotation_ = rotation;
     }
 
+    Eigen::Affine3d getTransform() const
+    {
+      Eigen::Affine3d transform = Eigen::Translation3d(ground_plane_offset_) * rotation_;
+      return transform;
+    }
+
     Eigen::Vector3d ground_plane_offset_;
     double max_deviation_;
     Eigen::AngleAxisd rotation_;
@@ -55,6 +61,8 @@ public:
 
   void updateParameters(const CameraModel& camera_model);
   void updateParameters(const Parameters& parameters);
+
+  Parameters getParameters() const;
 
   virtual bool updateMaxDeviationPlanesIfNeeded();
   virtual PlanesWithTransforms getDeviationPlanes() const;

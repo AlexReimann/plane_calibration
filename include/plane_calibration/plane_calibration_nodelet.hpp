@@ -44,6 +44,7 @@ protected:
 
   std::atomic<double> max_deviation_;
   Eigen::Vector3d ground_plane_offset_;
+  Eigen::AngleAxisd ground_plane_rotation_;
 
   std::shared_ptr<DepthVisualizer> depth_visualizer_;
   std::shared_ptr<dynamic_reconfigure::Server<PlaneCalibrationConfig>> reconfigure_server_;
