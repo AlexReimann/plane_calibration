@@ -113,7 +113,7 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   magic_estimator_ = std::make_shared<MagicMultiplierEstimation>(camera_model_, plane_calibration_, z_offset_,
                                                                  max_deviation_, max_deviation_);
 
-  testCalibration();
+//  testCalibration();
 //  test();
 }
 
@@ -159,8 +159,14 @@ void PlaneCalibrationNodelet::testCalibration()
   bool calculate_errors = false;
   MagicMultiplierEstimation::Result magic_result = magic_estimator_->estimate(calculate_errors);
 
+  int iterations = 10;
+  double step_size = 0.5;
   Eigen::AngleAxisd estimation = plane_calibration_->estimateRotation(plane_image_matrix, magic_result.multiplier_x,
-                                                                      magic_result.multiplier_y, 20);
+                                                                      magic_result.multiplier_y, iterations, step_size);
+
+  std::pair<double, double> one_shot_result = plane_calibration_->estimateAngles(plane_image_matrix,
+                                                                                 magic_result.multiplier_x,
+                                                                                 magic_result.multiplier_y);
 
   static tf2_ros::TransformBroadcaster transform_broadcaster;
   geometry_msgs::TransformStamped transformStamped;
