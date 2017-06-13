@@ -68,8 +68,13 @@ public:
   virtual std::vector<double> getDistancesToMaxDeviations(const Eigen::MatrixXf& plane) const;
 
 protected:
-  virtual void updateMaxDeviationPlanesImages(const Eigen::AngleAxisd& rotation = Eigen::AngleAxisd::Identity());
-  virtual std::vector<Eigen::Affine3d> getMaxDeviationTransforms(const Eigen::AngleAxisd& rotation);
+  virtual void updateMaxDeviationPlanesImages_(const Eigen::AngleAxisd& rotation = Eigen::AngleAxisd::Identity());
+  virtual std::vector<Eigen::Affine3d> getMaxDeviationTransforms_(const Eigen::AngleAxisd& rotation);
+
+  std::pair<double, double> estimateAngles_(const Eigen::MatrixXf& plane, const double& x_multiplier,
+                                           const double& y_multiplier);
+  virtual std::pair<double, double> getXYDistanceDiff_(const Eigen::MatrixXf& plane) const;
+  virtual std::vector<double> getDistancesToMaxDeviations_(const Eigen::MatrixXf& plane) const;
 
   CameraModel camera_model_;
   mutable std::mutex mutex_;

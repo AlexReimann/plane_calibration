@@ -24,6 +24,7 @@ PlaneCalibration::PlaneCalibration(const PlaneCalibration& object)
 
 void PlaneCalibration::updateParameters(const CameraModel& camera_model)
 {
+  std::lock_guard<std::mutex> lock(mutex_);
   camera_model_.update(camera_model.getParameters());
 }
 
@@ -36,28 +37,26 @@ void PlaneCalibration::updateParameters(const Parameters& parameters)
 
 bool PlaneCalibration::updateMaxDeviationPlanesIfNeeded()
 {
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  if (!update_max_deviation_planes_)
   {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (!update_max_deviation_planes_)
-    {
-      return false;
-    }
+    return false;
   }
-  updateMaxDeviationPlanesImages(parameters_.rotation_);
+
+  updateMaxDeviationPlanesImages_(parameters_.rotation_);
   return true;
 }
 
-void PlaneCalibration::updateMaxDeviationPlanesImages(const Eigen::AngleAxisd& rotation)
+void PlaneCalibration::updateMaxDeviationPlanesImages_(const Eigen::AngleAxisd& rotation)
 {
   if (!camera_model_.initialized())
   {
     return;
   }
 
-  std::lock_guard<std::mutex> lock(mutex_);
-
   max_deviation_planes_images_.clear();
-  std::vector<Eigen::Affine3d> transforms = getMaxDeviationTransforms(rotation);
+  std::vector<Eigen::Affine3d> transforms = getMaxDeviationTransforms_(rotation);
 
   for (int i = 0; i < transforms.size(); ++i)
   {
@@ -71,7 +70,7 @@ void PlaneCalibration::updateMaxDeviationPlanesImages(const Eigen::AngleAxisd& r
   update_max_deviation_planes_ = false;
 }
 
-std::vector<Eigen::Affine3d> PlaneCalibration::getMaxDeviationTransforms(const Eigen::AngleAxisd& rotation)
+std::vector<Eigen::Affine3d> PlaneCalibration::getMaxDeviationTransforms_(const Eigen::AngleAxisd& rotation)
 {
   double max_deviation = parameters_.max_deviation_;
   Eigen::Translation3d translation = Eigen::Translation3d(parameters_.ground_plane_offset_);
@@ -102,6 +101,7 @@ Eigen::AngleAxisd PlaneCalibration::estimateRotation(const Eigen::MatrixXf& plan
                                                      const double& y_multiplier, const int& iterations,
                                                      const double& step_size)
 {
+  std::lock_guard<std::mutex> lock(mutex_);
   double px_estimation = 0.0;
   double py_estimation = 0.0;
 
@@ -109,23 +109,30 @@ Eigen::AngleAxisd PlaneCalibration::estimateRotation(const Eigen::MatrixXf& plan
 
   for (int i = 0; i < iterations; ++i)
   {
-    auto estimation = estimateAngles(plane, x_multiplier, y_multiplier);
+    auto estimation = estimateAngles_(plane, x_multiplier, y_multiplier);
     px_estimation = estimation.first;
     py_estimation = estimation.second;
 
     rotation = rotation * Eigen::AngleAxisd(px_estimation * step_size, Eigen::Vector3d::UnitX())
         * Eigen::AngleAxisd(py_estimation * step_size, Eigen::Vector3d::UnitY());
-    updateMaxDeviationPlanesImages(rotation);
+    updateMaxDeviationPlanesImages_(rotation);
   }
 
-  updateMaxDeviationPlanesImages(parameters_.rotation_);
+  updateMaxDeviationPlanesImages_(parameters_.rotation_);
   return rotation;
 }
 
 std::pair<double, double> PlaneCalibration::estimateAngles(const Eigen::MatrixXf& plane, const double& x_multiplier,
                                                            const double& y_multiplier)
 {
-  auto distances_diffs = getXYDistanceDiff(plane);
+  std::lock_guard<std::mutex> lock(mutex_);
+  return estimateAngles_(plane, x_multiplier, y_multiplier);
+}
+
+std::pair<double, double> PlaneCalibration::estimateAngles_(const Eigen::MatrixXf& plane, const double& x_multiplier,
+                                                            const double& y_multiplier)
+{
+  auto distances_diffs = getXYDistanceDiff_(plane);
 
   double px_estimation = x_multiplier * distances_diffs.first;
   double py_estimation = y_multiplier * distances_diffs.second;
@@ -135,7 +142,13 @@ std::pair<double, double> PlaneCalibration::estimateAngles(const Eigen::MatrixXf
 
 std::pair<double, double> PlaneCalibration::getXYDistanceDiff(const Eigen::MatrixXf& plane) const
 {
-  auto distances = getDistancesToMaxDeviations(plane);
+  std::lock_guard<std::mutex> lock(mutex_);
+  return getXYDistanceDiff_(plane);
+}
+
+std::pair<double, double> PlaneCalibration::getXYDistanceDiff_(const Eigen::MatrixXf& plane) const
+{
+  auto distances = getDistancesToMaxDeviations_(plane);
 
   double x_diff = distances[2] - distances[0];
   double y_diff = distances[3] - distances[1];
@@ -146,6 +159,11 @@ std::pair<double, double> PlaneCalibration::getXYDistanceDiff(const Eigen::Matri
 std::vector<double> PlaneCalibration::getDistancesToMaxDeviations(const Eigen::MatrixXf& plane) const
 {
   std::lock_guard<std::mutex> lock(mutex_);
+  return getDistancesToMaxDeviations_(plane);
+}
+
+std::vector<double> PlaneCalibration::getDistancesToMaxDeviations_(const Eigen::MatrixXf& plane) const
+{
   std::vector<double> distances;
 
   for (int i = 0; i < max_deviation_planes_images_.size(); ++i)
