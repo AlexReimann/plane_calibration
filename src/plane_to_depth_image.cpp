@@ -52,6 +52,7 @@ MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
   MatrixXd y = plane.coeffs().coeff(1) * xy_multipliers.second;
   double z = plane.coeffs().coeff(2); //same for all rays
 
+  //TODO check if can optimize division (or compiler already does)
   result_image_matrix = -plane.coeffs().coeff(3) / ((x + y).array() + z);
 
   return result_image_matrix.cast<float>();

@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include <utility>
 #include <sstream>
+#include <memory>
 
 #include "camera_model.hpp"
 
@@ -47,6 +48,7 @@ protected:
   CameraModel::Parameters camera_model_paramaters_;
   std::pair<Eigen::MatrixXd, Eigen::MatrixXd> xy_multipliers_;
 };
+typedef std::shared_ptr<PlaneToDepthImage> PlaneToDepthImagePtr;
 
 } /* end namespace */
 
