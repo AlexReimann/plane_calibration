@@ -14,8 +14,8 @@
 #include <sensor_msgs/Image.h>
 
 #include "camera_model.hpp"
+#include "calibration_parameters.hpp"
 #include "plane_calibration.hpp"
-#include "magic_multiplier_estimation.hpp"
 #include "depth_visualizer.hpp"
 
 namespace plane_calibration
@@ -35,12 +35,12 @@ protected:
 
   virtual void publishMaxDeviationPlanes(Eigen::AngleAxisd rotation);
 
-  void testCalibration();
-  void test();
+//  void testCalibration();
+//  void test();
 
-  CameraModel camera_model_;
+  CameraModelPtr camera_model_;
+  CalibrationParametersPtr calibration_parameters_;
   PlaneCalibrationPtr plane_calibration_;
-  MagicMultiplierEstimationPtr magic_estimator_;
 
   std::atomic<double> max_deviation_;
   Eigen::Vector3d ground_plane_offset_;

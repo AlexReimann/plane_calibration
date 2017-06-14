@@ -8,6 +8,8 @@
 #include <Eigen/Dense>
 
 #include "camera_model.hpp"
+#include "calibration_parameters.hpp"
+#include "deviation_planes.hpp"
 
 namespace plane_calibration
 {
@@ -15,82 +17,38 @@ namespace plane_calibration
 class PlaneCalibration
 {
 public:
-  class Parameters
-  {
-  public:
-    Parameters()
-    {
-      max_deviation_ = 0.0;
-      rotation_ = Eigen::AngleAxisd::Identity();
-    }
-
-    Parameters(const Eigen::Vector3d& ground_plane_offset, const double& max_deviation,
-               const Eigen::AngleAxisd& rotation = Eigen::AngleAxisd::Identity())
-    {
-      ground_plane_offset_ = ground_plane_offset;
-      max_deviation_ = max_deviation;
-      rotation_ = rotation;
-    }
-
-    Eigen::Affine3d getTransform() const
-    {
-      Eigen::Affine3d transform = Eigen::Translation3d(ground_plane_offset_) * rotation_;
-      return transform;
-    }
-
-    Eigen::Vector3d ground_plane_offset_;
-    double max_deviation_;
-    Eigen::AngleAxisd rotation_;
-  };
-
-  class PlaneWithTransform
-  {
-  public:
-    Eigen::MatrixXf plane;
-    Eigen::Affine3d transform;
-  };
-  typedef std::vector<PlaneWithTransform> PlanesWithTransforms;
-
-  PlaneCalibration();
-
-  PlaneCalibration(const PlaneCalibration& object);
+  PlaneCalibration(const CameraModel& camera_model, const CalibrationParametersPtr& parameters);
 
   virtual ~PlaneCalibration()
   {
   }
 
-  void updateParameters(const CameraModel& camera_model);
-  void updateParameters(const Parameters& parameters);
-
-  Parameters getParameters() const;
-
-  virtual bool updateMaxDeviationPlanesIfNeeded();
-  virtual PlanesWithTransforms getDeviationPlanes() const;
-  virtual PlanesWithTransforms getDeviationPlanes(Eigen::AngleAxisd rotation);
-
-  Eigen::AngleAxisd estimateRotation(const Eigen::MatrixXf& plane, const double& x_multiplier,
-                                     const double& y_multiplier, const int& iterations, const double& step_size = 0.5);
-  std::pair<double, double> estimateAngles(const Eigen::MatrixXf& plane, const double& x_multiplier,
-                                           const double& y_multiplier);
-
-  virtual std::pair<double, double> getXYDistanceDiff(const Eigen::MatrixXf& plane) const;
-  virtual std::vector<double> getDistancesToMaxDeviations(const Eigen::MatrixXf& plane) const;
+  std::pair<double, double> calibrate(const Eigen::MatrixXf& filtered_depth_matrix);
 
 protected:
-  virtual void updateMaxDeviationPlanesImages_(const Eigen::AngleAxisd& rotation = Eigen::AngleAxisd::Identity());
-  virtual std::vector<Eigen::Affine3d> getMaxDeviationTransforms_(const Eigen::AngleAxisd& rotation);
+  class Errors
+  {
+  public:
+    double mean;
+    double max;
+  };
 
-  std::pair<double, double> estimateAngles_(const Eigen::MatrixXf& plane, const double& x_multiplier,
-                                            const double& y_multiplier);
-  virtual std::pair<double, double> getXYDistanceDiff_(const Eigen::MatrixXf& plane) const;
-  virtual std::vector<double> getDistancesToMaxDeviations_(const Eigen::MatrixXf& plane) const;
+  Errors getErrorsToBestEstimation(const Eigen::MatrixXf& matrix);
+  Errors getErrors(const Eigen::MatrixXf& plane, const Eigen::MatrixXf& matrix);
 
-  CameraModel camera_model_;
   mutable std::mutex mutex_;
-  Parameters parameters_;
+  CameraModel camera_model_;
+  CalibrationParametersPtr parameters_;
 
-  bool update_max_deviation_planes_;
-  std::vector<PlaneWithTransform> max_deviation_planes_images_;
+  PlaneToDepthImage plane_to_depth_;
+  DeviationPlanes max_deviation_planes_;
+  DeviationPlanes deviation_planes_;
+
+  DeviationPlanes temp_deviation_planes_;
+  Eigen::MatrixXf temp_estimated_plane_;
+
+  std::pair<double, double> best_estimated_angles_;
+  Eigen::MatrixXf best_estimated_plane_;
 };
 typedef std::shared_ptr<PlaneCalibration> PlaneCalibrationPtr;
 
