@@ -81,7 +81,7 @@ protected:
   virtual std::vector<Eigen::Affine3d> getMaxDeviationTransforms_(const Eigen::AngleAxisd& rotation);
 
   std::pair<double, double> estimateAngles_(const Eigen::MatrixXf& plane, const double& x_multiplier,
-                                           const double& y_multiplier);
+                                            const double& y_multiplier);
   virtual std::pair<double, double> getXYDistanceDiff_(const Eigen::MatrixXf& plane) const;
   virtual std::vector<double> getDistancesToMaxDeviations_(const Eigen::MatrixXf& plane) const;
 

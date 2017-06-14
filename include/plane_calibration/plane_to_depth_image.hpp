@@ -28,17 +28,24 @@ public:
     double max;
   };
 
-  static Errors getErrors(const Eigen::Affine3d& plane_transformation,
-                          const CameraModel::Parameters& camera_model_paramaters, Eigen::MatrixXf image_matrix);
+  PlaneToDepthImage(const CameraModel::Parameters& camera_model_paramaters);
+  Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation);
 
   static Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation,
                                  const CameraModel::Parameters& camera_model_paramaters);
+  static Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation,
+                                 const CameraModel::Parameters& camera_model_paramaters,
+                                 const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers);
 
   static std::pair<Eigen::MatrixXd, Eigen::MatrixXd> depthCalculationXYMultiplier(
       const CameraModel::Parameters& camera_model_paramaters);
 
-protected:
+  static Errors getErrors(const Eigen::Affine3d& plane_transformation,
+                          const CameraModel::Parameters& camera_model_paramaters, Eigen::MatrixXf image_matrix);
 
+protected:
+  CameraModel::Parameters camera_model_paramaters_;
+  std::pair<Eigen::MatrixXd, Eigen::MatrixXd> xy_multipliers_;
 };
 
 } /* end namespace */

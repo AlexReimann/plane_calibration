@@ -7,32 +7,30 @@ namespace plane_calibration
 
 using namespace Eigen;
 
-PlaneToDepthImage::Errors PlaneToDepthImage::getErrors(const Eigen::Affine3d& plane_transformation,
-                                                       const CameraModel::Parameters& camera_model_paramaters,
-                                                       Eigen::MatrixXf image_matrix)
+PlaneToDepthImage::PlaneToDepthImage(const CameraModel::Parameters& camera_model_paramaters)
 {
-  Eigen::MatrixXf plane = convert(plane_transformation, camera_model_paramaters);
+  camera_model_paramaters_ = camera_model_paramaters;
+  xy_multipliers_ = depthCalculationXYMultiplier(camera_model_paramaters_);
+}
 
-  Eigen::MatrixXf difference = (plane - image_matrix).cwiseAbs();
-
-  // nan == nan gives false
-  int not_nan_count = (difference.array() == difference.array()).count();
-
-  difference = difference.unaryExpr([](float v)
-  { return std::isnan(v) ? 0.0 : v;});
-
-  double mean = difference.sum() / not_nan_count;
-
-  Errors errors;
-  errors.mean = mean;
-  errors.min = difference.minCoeff();
-  errors.max = difference.maxCoeff();
-
-  return errors;
+Eigen::MatrixXf PlaneToDepthImage::convert(const Eigen::Affine3d& plane_transformation)
+{
+  return convert(plane_transformation, camera_model_paramaters_, xy_multipliers_);
 }
 
 MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
                                     const CameraModel::Parameters& camera_model_paramaters)
+{
+  // inverting the depth to point cloud calculations, see package depth_image_proc -> depth_conversions.h
+  // (u - c) * depth * (1 / f) -> depth * ( (u - c) / f) -> depth * multiplier
+  std::pair<MatrixXd, MatrixXd> xy_multipliers = depthCalculationXYMultiplier(camera_model_paramaters);
+
+  return convert(plane_transformation, camera_model_paramaters, xy_multipliers);
+}
+
+MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
+                                    const CameraModel::Parameters& camera_model_paramaters,
+                                    const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers)
 {
   MatrixXd result_image_matrix;
 
@@ -43,10 +41,6 @@ MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
   Vector4d z_axis(0.0, 0.0, 1.0, 0.0);
   Vector4d plane_normal = plane_transformation * z_axis;
   Hyperplane<double, 3> plane(plane_normal.topRows(3), translation);
-
-  // inverting the depth to point cloud calculations, see package depth_image_proc -> depth_conversions.h
-  // (u - c) * depth * (1 / f) -> depth * ( (u - c) / f) -> depth * multiplier
-  std::pair<MatrixXd, MatrixXd> xy_multipliers = depthCalculationXYMultiplier(camera_model_paramaters);
 
   // a*x + b*y + c*z + d = 0
   // a * (depth * x_multiplier) + b * (depth * y_multiplier) + c * depth + d = 0
@@ -81,6 +75,30 @@ std::pair<MatrixXd, MatrixXd> PlaneToDepthImage::depthCalculationXYMultiplier(
 
   std::pair<MatrixXd, MatrixXd> multiplier_pair(x_multiplier, y_multiplier);
   return multiplier_pair;
+}
+
+PlaneToDepthImage::Errors PlaneToDepthImage::getErrors(const Eigen::Affine3d& plane_transformation,
+                                                       const CameraModel::Parameters& camera_model_paramaters,
+                                                       Eigen::MatrixXf image_matrix)
+{
+  Eigen::MatrixXf plane = convert(plane_transformation, camera_model_paramaters);
+
+  Eigen::MatrixXf difference = (plane - image_matrix).cwiseAbs();
+
+  // nan == nan gives false
+  int not_nan_count = (difference.array() == difference.array()).count();
+
+  difference = difference.unaryExpr([](float v)
+  { return std::isnan(v) ? 0.0 : v;});
+
+  double mean = difference.sum() / not_nan_count;
+
+  Errors errors;
+  errors.mean = mean;
+  errors.min = difference.minCoeff();
+  errors.max = difference.maxCoeff();
+
+  return errors;
 }
 
 } /* end namespace */
