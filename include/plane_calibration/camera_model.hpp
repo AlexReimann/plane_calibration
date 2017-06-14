@@ -2,6 +2,7 @@
 #define plane_calibration_SRC_CAMERA_MODEL_HPP_
 
 #include <mutex>
+#include <memory>
 
 namespace plane_calibration
 {
@@ -58,6 +59,7 @@ protected:
   bool initialized_;
   Parameters parameters_;
 };
+typedef std::shared_ptr<CameraModel> CameraModelPtr;
 
 } /* end namespace */
 
