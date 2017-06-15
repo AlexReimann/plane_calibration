@@ -41,10 +41,10 @@ protected:
   CalibrationParametersPtr parameters_;
 
   PlaneToDepthImage plane_to_depth_;
-  DeviationPlanes max_deviation_planes_;
-  DeviationPlanes deviation_planes_;
+  DeviationPlanesPtr max_deviation_planes_;
+  DeviationPlanesPtr deviation_planes_;
 
-  DeviationPlanes temp_deviation_planes_;
+  DeviationPlanesPtr temp_deviation_planes_;
   Eigen::MatrixXf temp_estimated_plane_;
 
   std::pair<double, double> best_estimated_angles_;

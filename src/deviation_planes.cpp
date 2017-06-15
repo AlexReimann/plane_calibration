@@ -2,12 +2,14 @@
 
 namespace plane_calibration
 {
-DeviationPlanes::DeviationPlanes(PlaneToDepthImage plane_to_depth) :
+DeviationPlanes::DeviationPlanes(PlaneToDepthImage plane_to_depth, int width, int height) :
     plane_to_depth_(plane_to_depth)
 {
   planes_.resize(4);
   transform_.resize(4);
   deviation_ = 0.0;
+  x_scaling_ = 1.0 / width;
+  y_scaling_ = 1.0 / height;
 }
 
 void DeviationPlanes::init(CalibrationParameters::Parameters parameters)
@@ -38,11 +40,12 @@ void DeviationPlanes::update(CalibrationParameters::Parameters parameters, bool 
     planes_[i] = plane_to_depth_.convert(transform_[i]);
   }
 
-  double x_distance = getDistance(xPositive(), xNegative());
-  double y_distance = getDistance(yPositive(), yNegative());
+  bool matrix_has_nans = false;
+  double x_distance = getDistance(xPositive(), xNegative(), matrix_has_nans);
+  double y_distance = getDistance(yPositive(), yNegative(), matrix_has_nans);
 
-  double x_distance_normalized = x_distance / xPositive().cols();
-  double y_distance_normalized = y_distance / xPositive().rows();
+  double x_distance_normalized = x_distance * x_scaling_;
+  double y_distance_normalized = y_distance * y_scaling_;
 
   double x_magic_multiplier = deviation_ / x_distance_normalized;
   double y_magic_multiplier = deviation_ / y_distance_normalized;
@@ -78,17 +81,21 @@ std::vector<double> DeviationPlanes::getDistances(const std::vector<Eigen::Matri
   std::vector<double> distances;
   for (int i = 0; i < from.size(); ++i)
   {
-    distances.push_back(getDistance(from[i], to));
+    bool matrix_has_nans = true;
+    distances.push_back(getDistance(from[i], to, matrix_has_nans));
   }
   return distances;
 }
 
-double DeviationPlanes::getDistance(const Eigen::MatrixXf& from, const Eigen::MatrixXf& to)
+double DeviationPlanes::getDistance(const Eigen::MatrixXf& from, const Eigen::MatrixXf& to, bool remove_nans)
 {
   Eigen::MatrixXf difference = (to - from).cwiseAbs2();
 
-  difference = difference.unaryExpr([](double v)
-  { return std::isnan(v) ? 0.0 : v;});
+  if (remove_nans)
+  {
+    difference = difference.unaryExpr([](double v)
+    { return std::isnan(v) ? 0.0 : v;});
+  }
 
   double distance = difference.sum();
   return distance;

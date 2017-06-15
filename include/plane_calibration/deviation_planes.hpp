@@ -13,16 +13,13 @@ namespace plane_calibration
 class DeviationPlanes
 {
 public:
-  DeviationPlanes(PlaneToDepthImage plane_to_depth);
+  DeviationPlanes(PlaneToDepthImage plane_to_depth, int width, int height);
 
   void init(CalibrationParameters::Parameters parameters);
   void update(CalibrationParameters::Parameters parameters, bool use_max_deviation = false);
 
   std::pair<double, double> estimateAngles(const Eigen::MatrixXf& plane);
-  std::pair<double, double> getDistanceDiffs(const Eigen::MatrixXf& plane);
-
-  static std::vector<double> getDistances(const std::vector<Eigen::MatrixXf>& from, const Eigen::MatrixXf& to);
-  static double getDistance(const Eigen::MatrixXf& from, const Eigen::MatrixXf& to);
+  static double getDistance(const Eigen::MatrixXf& from, const Eigen::MatrixXf& to, bool remove_nans);
 
   double getDeviation();
   std::pair<double, double> getMultipliers();
@@ -40,6 +37,9 @@ public:
   Eigen::Affine3d yNegativeTransform();
 
 protected:
+  std::pair<double, double> getDistanceDiffs(const Eigen::MatrixXf& plane);
+  static std::vector<double> getDistances(const std::vector<Eigen::MatrixXf>& from, const Eigen::MatrixXf& to);
+
   int indexXPositive();
   int indexXNegative();
   int indexYPositive();
@@ -47,6 +47,9 @@ protected:
 
   PlaneToDepthImage plane_to_depth_;
   double deviation_;
+  double x_scaling_;
+  double y_scaling_;
+
   std::vector<Eigen::MatrixXf> planes_;
   std::vector<Eigen::Affine3d> transform_;
 

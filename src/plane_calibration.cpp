@@ -8,11 +8,17 @@ namespace plane_calibration
 {
 
 PlaneCalibration::PlaneCalibration(const CameraModel& camera_model, const CalibrationParametersPtr& parameters) :
-    plane_to_depth_(camera_model.getParameters()), max_deviation_planes_(plane_to_depth_), deviation_planes_(plane_to_depth_), temp_deviation_planes_(
-        plane_to_depth_)
+    plane_to_depth_(camera_model.getParameters())
 {
   camera_model_.update(camera_model.getParameters());
   parameters_ = parameters;
+
+  int width = camera_model.getParameters().width_;
+  int height = camera_model.getParameters().height_;
+
+  max_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height);
+  deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height);
+  temp_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height);
 }
 
 std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& filtered_depth_matrix)
@@ -24,8 +30,8 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
 
   if (parameters_updated)
   {
-    deviation_planes_.update(updated_parameters);
-    max_deviation_planes_.update(updated_parameters);
+    deviation_planes_->update(updated_parameters);
+    max_deviation_planes_->update(updated_parameters);
   }
 
   if (!parameters_updated)
@@ -43,7 +49,7 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
   double deviation_buffer = ecl::degrees_to_radians(0.5);
 
   CalibrationParameters::Parameters parameters(updated_parameters);
-  std::pair<double, double> angle_offset_estimation = max_deviation_planes_.estimateAngles(filtered_depth_matrix);
+  std::pair<double, double> angle_offset_estimation = max_deviation_planes_->estimateAngles(filtered_depth_matrix);
   x_angle_offset += angle_offset_estimation.first;
   y_angle_offset += angle_offset_estimation.second;
 
@@ -58,8 +64,8 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
                                           std::abs(angle_offset_estimation.second));
     parameters.deviation_ = max_angle_deviation + deviation_buffer;
 
-    temp_deviation_planes_.update(parameters);
-    angle_offset_estimation = temp_deviation_planes_.estimateAngles(filtered_depth_matrix);
+    temp_deviation_planes_->update(parameters);
+    angle_offset_estimation = temp_deviation_planes_->estimateAngles(filtered_depth_matrix);
 
     parameters.rotation_ = parameters.rotation_
         * Eigen::AngleAxisd(angle_offset_estimation.first, Eigen::Vector3d::UnitX())
