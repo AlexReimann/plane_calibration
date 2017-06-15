@@ -3,7 +3,9 @@
 #include <depth_image_proc/depth_conversions.h>
 #include <plane_calibration/depth_visualizer.hpp>
 #include <std_msgs/Float32.h>
+
 #include "plane_calibration/image_msg_eigen_converter.hpp"
+#include "plane_calibration/plane_to_depth_image.hpp"
 
 namespace plane_calibration
 {
@@ -42,6 +44,24 @@ void DepthVisualizer::publishImage(const std::string& topic, const sensor_msgs::
   {
     publishers_[topic].publish(image_msg);
   }
+}
+
+void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::Affine3d& plane_transformation,
+                                   const CameraModel::Parameters& camera_model_paramaters, std::string frame_id)
+{
+  addPublisherIfNotExist<sensor_msgs::PointCloud2>(topic);
+
+  if (publishers_[topic].getNumSubscribers() == 0)
+  {
+    return;
+  }
+
+  Eigen::MatrixXf plane = PlaneToDepthImage::convert(plane_transformation, camera_model_paramaters);
+
+  sensor_msgs::Image image_msg;
+  image_msg.header.frame_id = frame_id;
+  ImageMsgEigenConverter::convert(plane, image_msg);
+  publishCloud(topic, image_msg);
 }
 
 void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id)

@@ -151,11 +151,8 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   tf::transformEigenToMsg(transform, transformStamped.transform);
   transform_broadcaster.sendTransform(transformStamped);
 
-  Eigen::MatrixXf result_plane = PlaneToDepthImage::convert(transform, camera_model_->getParameters());
-  Eigen::MatrixXf start_plane = PlaneToDepthImage::convert(parameters.getTransform(), camera_model_->getParameters());
-
-  depth_visualizer_->publishCloud("result_plane", result_plane, frame_id);
-  depth_visualizer_->publishCloud("start_plane", start_plane, frame_id);
+  depth_visualizer_->publishCloud("result_plane", transform, camera_model_->getParameters(), frame_id);
+  depth_visualizer_->publishCloud("start_plane", parameters.getTransform(), camera_model_->getParameters(), frame_id);
 
 //  plane_calibration_->updateMaxDeviationPlanesIfNeeded();
 //
