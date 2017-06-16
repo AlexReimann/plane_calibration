@@ -19,7 +19,7 @@ namespace plane_calibration
 PlaneCalibrationNodelet::PlaneCalibrationNodelet()
 {
   debug_ = false;
-  max_noise_ = 0.0;
+  input_max_noise_ = 0.0;
   ground_plane_rotation_ = Eigen::AngleAxisd::Identity();
 }
 
@@ -64,14 +64,17 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   px_offset_ = ecl::degrees_to_radians(config.px_degree);
   py_offset_ = ecl::degrees_to_radians(config.py_degree);
   pz_offset_ = ecl::degrees_to_radians(config.pz_degree);
-  max_noise_ = config.max_noise;
 
   max_deviation_ = ecl::degrees_to_radians(config.max_deviation_degrees);
   iterations_ = config.iterations;
 
-  input_filter_threshold_from_ground_ = config.threshold_from_ground;
-  input_filter_max_error_ = config.max_error;
-  input_filter_->update(input_filter_max_error_, input_filter_threshold_from_ground_);
+  input_max_noise_ = config.input_max_noise;
+  input_filter_threshold_from_ground_ = config.input_threshold_from_ground;
+
+  if (input_filter_)
+  {
+    input_filter_->update(input_max_noise_, input_filter_threshold_from_ground_);
+  }
 
   Eigen::Vector3d ground_plane_offset;
   Eigen::AngleAxisd rotation = ground_plane_rotation_;
@@ -123,7 +126,7 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   if (!input_filter_)
   {
     input_filter_ = std::make_shared<InputFilter>(*camera_model_, calibration_parameters_, depth_visualizer_,
-                                                  input_filter_max_error_, input_filter_max_error_);
+                                                  input_max_noise_, input_filter_threshold_from_ground_);
   }
 
   Eigen::MatrixXf depth_matrix;

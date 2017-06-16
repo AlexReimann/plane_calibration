@@ -44,8 +44,8 @@ protected:
   Eigen::AngleAxisd ground_plane_rotation_;
   std::atomic<int> iterations_;
 
+  std::atomic<double> input_max_noise_;
   std::atomic<double> input_filter_threshold_from_ground_;
-  std::atomic<double> input_filter_max_error_;
 
   std::shared_ptr<DepthVisualizer> depth_visualizer_;
   std::shared_ptr<dynamic_reconfigure::Server<PlaneCalibrationConfig>> reconfigure_server_;
@@ -58,7 +58,6 @@ protected:
   std::atomic<double> px_offset_;
   std::atomic<double> py_offset_;
   std::atomic<double> pz_offset_;
-  std::atomic<double> max_noise_;
 
   ros::Publisher pub_candidate_points_;
   ros::Publisher pub_plane_points_;
