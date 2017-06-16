@@ -1,4 +1,5 @@
 <launch>
+  <param name="/bond_disable_heartbeat_timeout" value="true"/>
   <node pkg="nodelet" type="nodelet" name="plane_calibration_manager" args="manager"/>
 
   <include file="$(find plane_calibration)/launch/nodelet.launch.xml">
