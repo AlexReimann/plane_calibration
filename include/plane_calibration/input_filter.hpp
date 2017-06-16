@@ -2,6 +2,7 @@
 #define plane_calibration_SRC_INPUT_FILTER_HPP_
 
 #include <memory>
+#include <mutex>
 #include <Eigen/Dense>
 
 #include "camera_model.hpp"

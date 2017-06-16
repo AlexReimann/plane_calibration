@@ -53,6 +53,9 @@ void InputFilter::filter(Eigen::MatrixXf& matrix, bool debug)
   Eigen::MatrixXf valid = (far_enough.array() && close_enough.array()).cast<float>();
   matrix = matrix.cwiseProduct(valid);
 
+  matrix = matrix.unaryExpr([](float v)
+  { return v == 0.0f ? std::nanf("") : v;});
+
   if (debug)
   {
     std::string frame_id = "camera_depth_optical_frame";
