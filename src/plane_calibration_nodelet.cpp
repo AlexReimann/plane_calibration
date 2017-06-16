@@ -135,18 +135,10 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   CalibrationParameters::Parameters parameters = calibration_parameters_->getParameters();
   std::pair<double, double> one_shot_result = plane_calibration_->calibrate(depth_matrix, iterations_);
 
-  std::cout << "offset angles: " << ecl::radians_to_degrees(one_shot_result.first) << ", "
-      << ecl::radians_to_degrees(one_shot_result.second) << std::endl;
-
-  std::cout << "original angles: " << ecl::radians_to_degrees(px_offset_.load()) << ", "
-      << ecl::radians_to_degrees(py_offset_.load()) << std::endl;
-
-  static tf2_ros::TransformBroadcaster transform_broadcaster;
-  geometry_msgs::TransformStamped transformStamped;
-
-  transformStamped.header.stamp = ros::Time::now();
-  std::string frame_id = "camera_depth_optical_frame";
-  transformStamped.header.frame_id = frame_id;
+//  std::cout << "offset angles: " << ecl::radians_to_degrees(one_shot_result.first) << ", "
+//      << ecl::radians_to_degrees(one_shot_result.second) << std::endl;
+//  std::cout << "original angles: " << ecl::radians_to_degrees(px_offset_.load()) << ", "
+//      << ecl::radians_to_degrees(py_offset_.load()) << std::endl;
 
   Eigen::AngleAxisd rotation;
   rotation = parameters.rotation_ * Eigen::AngleAxisd(one_shot_result.first, Eigen::Vector3d::UnitX())
@@ -154,21 +146,6 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
 
   Eigen::Affine3d transform = Eigen::Translation3d(parameters.ground_plane_offset_) * rotation;
 
-  transformStamped.child_frame_id = "result";
-  tf::transformEigenToMsg(transform, transformStamped.transform);
-  transform_broadcaster.sendTransform(transformStamped);
-
-  depth_visualizer_->publishCloud("result_plane", transform, camera_model_->getParameters(), frame_id);
-  depth_visualizer_->publishCloud("start_plane", parameters.getTransform(), camera_model_->getParameters(), frame_id);
-
-  if (debug_)
-  {
-    publishMaxDeviationPlanes(parameters.rotation_);
-  }
-}
-
-void PlaneCalibrationNodelet::publishMaxDeviationPlanes(Eigen::AngleAxisd rotation)
-{
   static tf2_ros::TransformBroadcaster transform_broadcaster;
   geometry_msgs::TransformStamped transformStamped;
 
@@ -176,11 +153,19 @@ void PlaneCalibrationNodelet::publishMaxDeviationPlanes(Eigen::AngleAxisd rotati
   std::string frame_id = "camera_depth_optical_frame";
   transformStamped.header.frame_id = frame_id;
 
-  Eigen::Affine3d transform = Eigen::Translation3d(Eigen::Vector3d(x_offset_, y_offset_, z_offset_)) * rotation;
-
-  transformStamped.child_frame_id = "offset";
+  transformStamped.child_frame_id = "result";
   tf::transformEigenToMsg(transform, transformStamped.transform);
   transform_broadcaster.sendTransform(transformStamped);
+
+  if (debug_)
+  {
+    transformStamped.child_frame_id = "offset";
+    tf::transformEigenToMsg(parameters.getTransform(), transformStamped.transform);
+    transform_broadcaster.sendTransform(transformStamped);
+
+    depth_visualizer_->publishCloud("result_plane", transform, camera_model_->getParameters(), frame_id);
+    depth_visualizer_->publishCloud("start_plane", parameters.getTransform(), camera_model_->getParameters(), frame_id);
+  }
 }
 
 } /* end namespace */
