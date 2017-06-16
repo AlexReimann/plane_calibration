@@ -36,9 +36,6 @@ protected:
 
   virtual void publishMaxDeviationPlanes(Eigen::AngleAxisd rotation);
 
-//  void testCalibration();
-//  void test();
-
   CameraModelPtr camera_model_;
   CalibrationParametersPtr calibration_parameters_;
   InputFilterPtr input_filter_;
