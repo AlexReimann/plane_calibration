@@ -1,5 +1,6 @@
 #include "plane_calibration/plane_calibration_nodelet.hpp"
 
+#include <sstream>
 #include <Eigen/Dense>
 #include <ecl/geometry/angle.hpp>
 
@@ -11,7 +12,6 @@
 #include <tf2_ros/transform_broadcaster.h>
 
 #include "plane_calibration/image_msg_eigen_converter.hpp"
-#include "plane_calibration/plane_to_depth_image.hpp"
 
 namespace plane_calibration
 {
@@ -20,6 +20,8 @@ PlaneCalibrationNodelet::PlaneCalibrationNodelet()
 {
   debug_ = false;
   ground_plane_rotation_ = Eigen::AngleAxisd::Identity();
+
+  last_valid_calibration_result_ = std::make_pair(0.0, 0.0);
 }
 
 void PlaneCalibrationNodelet::onInit()
@@ -94,6 +96,15 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   }
 
   calibration_parameters_->update(ground_plane_offset, ecl::degrees_to_radians(config.max_deviation_degrees), rotation);
+
+  calibration_validation_config_.max_too_low_ratio = config.plane_max_too_low_ratio;
+  calibration_validation_config_.max_mean = config.plane_max_mean;
+  calibration_validation_config_.max_deviation = config.plane_max_deviation;
+
+  if (calibration_validation_)
+  {
+    calibration_validation_->updateConfig(calibration_validation_config_);
+  }
 }
 
 void PlaneCalibrationNodelet::cameraInfoCB(const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
@@ -131,6 +142,17 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
                                                   input_filter_config_);
   }
 
+  if (!calibration_validation_)
+  {
+    calibration_validation_ = std::make_shared<CalibrationValidation>(*camera_model_, calibration_parameters_,
+                                                                      calibration_validation_config_);
+  }
+
+  if (!plane_to_depth_converter_)
+  {
+    plane_to_depth_converter_ = std::make_shared<PlaneToDepthImage>(camera_model_->getParameters());
+  }
+
   Eigen::MatrixXf depth_matrix;
 
   bool converted_successfully = ImageMsgEigenConverter::convert(depth_image_msg, depth_matrix);
@@ -140,27 +162,127 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
     return;
   }
 
+  runCalibration(depth_matrix);
+  publishTransform();
+}
+
+void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
+{
+  if (debug_)
+  {
+    static tf2_ros::TransformBroadcaster transform_broadcaster;
+    geometry_msgs::TransformStamped transformStamped;
+
+    transformStamped.header.stamp = ros::Time::now();
+    std::string frame_id = "camera_depth_optical_frame";
+    transformStamped.header.frame_id = frame_id;
+
+    CalibrationParameters::Parameters parameters = calibration_parameters_->getParameters();
+
+    transformStamped.child_frame_id = "uncalibrated_ground";
+    tf::transformEigenToMsg(parameters.getTransform(), transformStamped.transform);
+    transform_broadcaster.sendTransform(transformStamped);
+
+    depth_visualizer_->publishCloud("debug/uncalibrated_ground", parameters.getTransform(),
+                                    camera_model_->getParameters(), frame_id);
+  }
+
   input_filter_->filter(depth_matrix, debug_);
 
-  if (!input_filter_->dataIsUsable(depth_matrix))
+  bool input_data_not_usable = !input_filter_->dataIsUsable(depth_matrix);
+  if (input_data_not_usable)
   {
+    if (debug_)
+    {
+      ROS_WARN_STREAM("[PlaneCalibrationNodelet]: Input data not usable, not going to calibrate");
+    }
     return;
   }
 
-  CalibrationParameters::Parameters parameters = calibration_parameters_->getParameters();
-  std::pair<double, double> one_shot_result = plane_calibration_->calibrate(depth_matrix, iterations_);
+  if (last_valid_calibration_result_plane_.size() != 0)
+  {
+    bool parameters_updated = calibration_parameters_->parametersUpdated();
+    bool last_calibration_is_still_good = calibration_validation_->groundPlaneFitsData(
+        last_valid_calibration_result_plane_, depth_matrix);
+    if (!parameters_updated && last_calibration_is_still_good)
+    {
+      if (debug_)
+      {
+        ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Last calibration data still works, not going to calibrate");
+      }
+      return;
+    }
+  }
 
-//  std::cout << "offset angles: " << ecl::radians_to_degrees(one_shot_result.first) << ", "
-//      << ecl::radians_to_degrees(one_shot_result.second) << std::endl;
-//  std::cout << "original angles: " << ecl::radians_to_degrees(px_offset_.load()) << ", "
-//      << ecl::radians_to_degrees(py_offset_.load()) << std::endl;
+  CalibrationParameters::Parameters parameters = calibration_parameters_->getParameters();
+  std::pair<double, double> calibration_result = plane_calibration_->calibrate(depth_matrix, iterations_);
+
+  if (debug_)
+  {
+    ROS_INFO_STREAM(
+        "[PlaneCalibrationNodelet]: Calibration result angles: " << calibration_result.first << ", " << calibration_result.second);
+
+    Eigen::AngleAxisd rotation;
+    rotation = parameters.rotation_ * Eigen::AngleAxisd(calibration_result.first, Eigen::Vector3d::UnitX())
+        * Eigen::AngleAxisd(calibration_result.second, Eigen::Vector3d::UnitY());
+
+    Eigen::Affine3d transform = Eigen::Translation3d(parameters.ground_plane_offset_) * rotation;
+
+    std::string frame_id = "camera_depth_optical_frame";
+    depth_visualizer_->publishCloud("debug/calibration_result", transform, camera_model_->getParameters(), frame_id);
+  }
+
+  //  std::cout << "offset angles: " << ecl::radians_to_degrees(one_shot_result.first) << ", "
+  //      << ecl::radians_to_degrees(one_shot_result.second) << std::endl;
+  //  std::cout << "original angles: " << ecl::radians_to_degrees(px_offset_.load()) << ", "
+  //      << ecl::radians_to_degrees(py_offset_.load()) << std::endl;
+
+  bool valid_calibration_angles = calibration_validation_->angleOffsetValid(calibration_result);
+  if (!valid_calibration_angles)
+  {
+    if (debug_)
+    {
+      ROS_WARN_STREAM(
+          "[PlaneCalibrationNodelet]: Calibration turned out bad, too big angles ( > " << parameters.max_deviation_ << "):");
+      ROS_WARN_STREAM(
+          "[PlaneCalibrationNodelet]: x angle: " << calibration_result.first << ", y angle: " << calibration_result.second);
+    }
+    //keep old / last one
+    return;
+  }
 
   Eigen::AngleAxisd rotation;
-  rotation = parameters.rotation_ * Eigen::AngleAxisd(one_shot_result.first, Eigen::Vector3d::UnitX())
-      * Eigen::AngleAxisd(one_shot_result.second, Eigen::Vector3d::UnitY());
+  rotation = parameters.rotation_ * Eigen::AngleAxisd(calibration_result.first, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(calibration_result.second, Eigen::Vector3d::UnitY());
 
   Eigen::Affine3d transform = Eigen::Translation3d(parameters.ground_plane_offset_) * rotation;
+  Eigen::MatrixXf new_ground_plane = plane_to_depth_converter_->convert(transform);
 
+  bool good_calibration = calibration_validation_->groundPlaneFitsData(new_ground_plane, depth_matrix);
+  if (!good_calibration)
+  {
+    if (debug_)
+    {
+      ROS_WARN_STREAM("[PlaneCalibrationNodelet]: Calibration turned out bad: Data does not fit good enough");
+    }
+    //keep old / last one
+    return;
+  }
+
+  std::stringstream angle_change_string;
+  angle_change_string << "px: " << last_valid_calibration_result_.first << " -> " << calibration_result.first;
+  angle_change_string << ", ";
+  angle_change_string << "py: " << last_valid_calibration_result_.second << " -> " << calibration_result.second;
+
+  ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Updated the calibration angles: " << angle_change_string.str());
+
+  last_valid_calibration_result_ = calibration_result;
+  last_valid_calibration_result_plane_ = new_ground_plane;
+  last_valid_calibration_transformation_ = transform;
+}
+
+void PlaneCalibrationNodelet::publishTransform()
+{
   static tf2_ros::TransformBroadcaster transform_broadcaster;
   geometry_msgs::TransformStamped transformStamped;
 
@@ -168,18 +290,14 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   std::string frame_id = "camera_depth_optical_frame";
   transformStamped.header.frame_id = frame_id;
 
-  transformStamped.child_frame_id = "result";
-  tf::transformEigenToMsg(transform, transformStamped.transform);
+  transformStamped.child_frame_id = "calibrated_plane";
+  tf::transformEigenToMsg(last_valid_calibration_transformation_, transformStamped.transform);
   transform_broadcaster.sendTransform(transformStamped);
 
   if (debug_)
   {
-    transformStamped.child_frame_id = "offset";
-    tf::transformEigenToMsg(parameters.getTransform(), transformStamped.transform);
-    transform_broadcaster.sendTransform(transformStamped);
-
-    depth_visualizer_->publishCloud("result_plane", transform, camera_model_->getParameters(), frame_id);
-    depth_visualizer_->publishCloud("start_plane", parameters.getTransform(), camera_model_->getParameters(), frame_id);
+    depth_visualizer_->publishCloud("debug/calibrated_plane", last_valid_calibration_transformation_,
+                                    camera_model_->getParameters(), frame_id);
   }
 }
 

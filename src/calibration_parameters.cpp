@@ -39,6 +39,12 @@ CalibrationParameters::Parameters CalibrationParameters::getParameters()
   return parameters_;
 }
 
+bool CalibrationParameters::parametersUpdated()
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  return updated_;
+}
+
 Eigen::Affine3d CalibrationParameters::getTransform() const
 {
   std::lock_guard<std::mutex> lock(mutex_);

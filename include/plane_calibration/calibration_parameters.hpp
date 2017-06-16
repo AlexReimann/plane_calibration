@@ -50,6 +50,7 @@ public:
 
   bool getUpdatedParameters(Parameters& updated_parameters);
   Parameters getParameters();
+  bool parametersUpdated();
   Eigen::Affine3d getTransform() const;
 
   void update(const Eigen::Vector3d& ground_plane_offset, const double& max_deviation,
