@@ -33,7 +33,7 @@ public:
 
     Eigen::Affine3d getTransform() const
     {
-      Eigen::Affine3d transform = Eigen::Translation3d(ground_plane_offset_) * rotation_;
+      return Eigen::Translation3d(ground_plane_offset_) * rotation_;
     }
 
     Eigen::Vector3d ground_plane_offset_;
@@ -49,6 +49,7 @@ public:
   CalibrationParameters(const CalibrationParameters &object);
 
   bool getUpdatedParameters(Parameters& updated_parameters);
+  Parameters getParameters();
   Eigen::Affine3d getTransform() const;
 
   void update(const Eigen::Vector3d& ground_plane_offset, const double& max_deviation,
