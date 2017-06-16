@@ -116,6 +116,11 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
     plane_calibration_ = std::make_shared<PlaneCalibration>(*camera_model_, calibration_parameters_, depth_visualizer_);
   }
 
+  if (!input_filter_)
+  {
+    input_filter_ = std::make_shared<InputFilter>(*camera_model_, calibration_parameters_, depth_visualizer_);
+  }
+
   Eigen::MatrixXf depth_matrix;
 
   bool converted_successfully = ImageMsgEigenConverter::convert(depth_image_msg, depth_matrix);
@@ -124,6 +129,8 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
     ROS_ERROR_STREAM("[PlaneCalibrationNodelet]: Conversion from image msg to Eigen matrix failed");
     return;
   }
+
+  input_filter_->filter(depth_matrix, debug_);
 
   CalibrationParameters::Parameters parameters = calibration_parameters_->getParameters();
   std::pair<double, double> one_shot_result = plane_calibration_->calibrate(depth_matrix, iterations_);

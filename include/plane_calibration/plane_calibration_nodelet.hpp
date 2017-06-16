@@ -15,6 +15,7 @@
 
 #include "camera_model.hpp"
 #include "calibration_parameters.hpp"
+#include "input_filter.hpp"
 #include "plane_calibration.hpp"
 #include "depth_visualizer.hpp"
 
@@ -40,6 +41,7 @@ protected:
 
   CameraModelPtr camera_model_;
   CalibrationParametersPtr calibration_parameters_;
+  InputFilterPtr input_filter_;
   PlaneCalibrationPtr plane_calibration_;
 
   std::atomic<double> max_deviation_;
