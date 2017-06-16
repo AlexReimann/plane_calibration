@@ -26,9 +26,9 @@ public:
                const Eigen::AngleAxisd& rotation = Eigen::AngleAxisd::Identity())
     {
       ground_plane_offset_ = ground_plane_offset;
+      rotation_ = rotation;
       max_deviation_ = max_deviation;
       deviation_ = max_deviation_;
-      rotation_ = rotation;
     }
 
     Eigen::Affine3d getTransform() const
