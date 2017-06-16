@@ -69,6 +69,10 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   max_deviation_ = ecl::degrees_to_radians(config.max_deviation_degrees);
   iterations_ = config.iterations;
 
+  input_filter_threshold_from_ground_ = config.threshold_from_ground;
+  input_filter_max_error_ = config.max_error;
+  input_filter_->update(input_filter_max_error_, input_filter_threshold_from_ground_);
+
   Eigen::Vector3d ground_plane_offset;
   Eigen::AngleAxisd rotation = ground_plane_rotation_;
   if (config.use_manual_ground_transform)
@@ -118,7 +122,8 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
 
   if (!input_filter_)
   {
-    input_filter_ = std::make_shared<InputFilter>(*camera_model_, calibration_parameters_, depth_visualizer_);
+    input_filter_ = std::make_shared<InputFilter>(*camera_model_, calibration_parameters_, depth_visualizer_,
+                                                  input_filter_max_error_, input_filter_max_error_);
   }
 
   Eigen::MatrixXf depth_matrix;

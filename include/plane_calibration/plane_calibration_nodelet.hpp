@@ -44,6 +44,9 @@ protected:
   Eigen::AngleAxisd ground_plane_rotation_;
   std::atomic<int> iterations_;
 
+  std::atomic<double> input_filter_threshold_from_ground_;
+  std::atomic<double> input_filter_max_error_;
+
   std::shared_ptr<DepthVisualizer> depth_visualizer_;
   std::shared_ptr<dynamic_reconfigure::Server<PlaneCalibrationConfig>> reconfigure_server_;
 

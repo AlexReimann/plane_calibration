@@ -16,12 +16,15 @@ class InputFilter
 public:
   //TODO automatic threshold from max_deviation
   InputFilter(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
-              const std::shared_ptr<DepthVisualizer>& depth_visualizer, double threshold_from_ground = 0.2,
-              double max_error = 0.03);
+              const std::shared_ptr<DepthVisualizer>& depth_visualizer, double max_error = 0.03,
+              double threshold_from_ground = 0.2);
 
+  void update(double max_error, double threshold_from_ground);
   void filter(Eigen::MatrixXf& matrix, bool debug = false);
 
 protected:
+  void updateBorders_();
+
   mutable std::mutex mutex_;
   CameraModel camera_model_;
   CalibrationParametersPtr parameters_;

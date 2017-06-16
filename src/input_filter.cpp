@@ -7,29 +7,46 @@ namespace plane_calibration
 {
 
 InputFilter::InputFilter(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
-                         const std::shared_ptr<DepthVisualizer>& depth_visualizer, double threshold_from_ground,
-                         double max_error) :
+                         const std::shared_ptr<DepthVisualizer>& depth_visualizer, double max_error,
+                         double threshold_from_ground) :
     camera_model_(camera_model)
 {
   parameters_ = parameters;
-  threshold_from_ground_ = threshold_from_ground;
   max_error_ = max_error;
+  threshold_from_ground_ = threshold_from_ground;
+  depth_visualizer_ = depth_visualizer;
 
-  Eigen::Affine3d ground_transform = parameters->getTransform();
-  Eigen::Translation3d top_offset(threshold_from_ground_ * Eigen::Vector3d::UnitZ());
-  Eigen::Translation3d bottom_offset(-threshold_from_ground_ * Eigen::Vector3d::UnitZ());
+  updateBorders_();
+}
+
+void InputFilter::update(double max_error, double threshold_from_ground)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  max_error_ = max_error;
+  threshold_from_ground_ = threshold_from_ground;
+
+  updateBorders_();
+}
+
+void InputFilter::updateBorders_()
+{
+  double threshold = threshold_from_ground_ + max_error_;
+
+  Eigen::Affine3d ground_transform = parameters_->getTransform();
+  Eigen::Translation3d top_offset(threshold * Eigen::Vector3d::UnitZ());
+  Eigen::Translation3d bottom_offset(-threshold * Eigen::Vector3d::UnitZ());
 
   Eigen::Affine3d top_transform = ground_transform * top_offset;
   Eigen::Affine3d bottom_transform = ground_transform * bottom_offset;
 
-  min_plane_ = PlaneToDepthImage::convert(top_transform, camera_model.getParameters());
-  max_plane_ = PlaneToDepthImage::convert(bottom_transform, camera_model.getParameters());
+  min_plane_ = PlaneToDepthImage::convert(top_transform, camera_model_.getParameters());
+  max_plane_ = PlaneToDepthImage::convert(bottom_transform, camera_model_.getParameters());
 
-  depth_visualizer_ = depth_visualizer;
 }
 
 void InputFilter::filter(Eigen::MatrixXf& matrix, bool debug)
 {
+  std::lock_guard<std::mutex> lock(mutex_);
   Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> far_enough = matrix.array() >= min_plane_.array();
   Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> close_enough = matrix.array() <= max_plane_.array();
 
