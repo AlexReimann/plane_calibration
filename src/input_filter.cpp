@@ -7,30 +7,27 @@ namespace plane_calibration
 {
 
 InputFilter::InputFilter(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
-                         const std::shared_ptr<DepthVisualizer>& depth_visualizer, double max_error,
-                         double threshold_from_ground) :
+                         const std::shared_ptr<DepthVisualizer>& depth_visualizer, const Config& config) :
     camera_model_(camera_model)
 {
   parameters_ = parameters;
-  max_error_ = max_error;
-  threshold_from_ground_ = threshold_from_ground;
+  config_ = config;
   depth_visualizer_ = depth_visualizer;
 
   updateBorders_();
 }
 
-void InputFilter::update(double max_error, double threshold_from_ground)
+void InputFilter::updateConfig(const Config& config)
 {
   std::lock_guard<std::mutex> lock(mutex_);
-  max_error_ = max_error;
-  threshold_from_ground_ = threshold_from_ground;
+  config_ = config;
 
   updateBorders_();
 }
 
 void InputFilter::updateBorders_()
 {
-  double threshold = threshold_from_ground_ + max_error_;
+  double threshold = config_.threshold_from_ground + config_.max_error;
 
   Eigen::Affine3d ground_transform = parameters_->getTransform();
   Eigen::Translation3d top_offset(threshold * Eigen::Vector3d::UnitZ());
@@ -72,6 +69,37 @@ void InputFilter::filter(Eigen::MatrixXf& matrix, bool debug)
     depth_visualizer_->publishImage("debug/filter/not_filtered", valid, frame_id);
     depth_visualizer_->publishCloud("debug/filter/filtered", matrix, frame_id);
   }
+}
+
+bool InputFilter::dataIsUsable(const Eigen::MatrixXf& data)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  double data_size = data.size();
+
+  int nan_count = (data.array() != data.array()).count();
+  double nan_ratio = nan_count / data_size;
+
+  if (nan_ratio > config_.max_nan_ratio)
+  {
+    return false;
+  }
+
+  data_size = data_size - nan_count;
+  int zero_count = (data.array() == 0.0).count();
+  double zero_ratio = zero_count / data_size;
+
+  if (zero_ratio > config_.max_zero_ratio)
+  {
+    return false;
+  }
+
+  double data_ratio = data_size / data.size();
+  if (data_ratio < config_.min_data_ratio)
+  {
+    return false;
+  }
+
+  return true;
 }
 
 } /* end namespace */

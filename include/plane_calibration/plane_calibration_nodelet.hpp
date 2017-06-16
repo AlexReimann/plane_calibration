@@ -17,6 +17,7 @@
 #include "calibration_parameters.hpp"
 #include "input_filter.hpp"
 #include "plane_calibration.hpp"
+#include "calibration_validation.hpp"
 #include "depth_visualizer.hpp"
 
 namespace plane_calibration
@@ -44,8 +45,7 @@ protected:
   Eigen::AngleAxisd ground_plane_rotation_;
   std::atomic<int> iterations_;
 
-  std::atomic<double> input_max_noise_;
-  std::atomic<double> input_filter_threshold_from_ground_;
+  InputFilter::Config input_filter_config_;
 
   std::shared_ptr<DepthVisualizer> depth_visualizer_;
   std::shared_ptr<dynamic_reconfigure::Server<PlaneCalibrationConfig>> reconfigure_server_;
