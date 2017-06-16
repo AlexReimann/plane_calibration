@@ -18,11 +18,8 @@ PlaneCalibration::PlaneCalibration(const CameraModel& camera_model, const Calibr
   camera_model_.update(camera_model.getParameters());
   parameters_ = parameters;
 
-  int width = camera_model.getParameters().width_;
-  int height = camera_model.getParameters().height_;
-
-  max_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height, depth_visualizer);
-  temp_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height, depth_visualizer);
+  max_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, depth_visualizer);
+  temp_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, depth_visualizer);
 
   depth_visualizer_ = depth_visualizer;
 }

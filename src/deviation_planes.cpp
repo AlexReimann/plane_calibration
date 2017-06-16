@@ -5,15 +5,12 @@
 
 namespace plane_calibration
 {
-DeviationPlanes::DeviationPlanes(PlaneToDepthImage plane_to_depth, int width, int height,
-                                 std::shared_ptr<DepthVisualizer> depth_visualizer) :
+DeviationPlanes::DeviationPlanes(PlaneToDepthImage plane_to_depth, std::shared_ptr<DepthVisualizer> depth_visualizer) :
     plane_to_depth_(plane_to_depth)
 {
   planes_.resize(4);
   transform_.resize(4);
   deviation_ = 0.0;
-  x_scaling_ = 1.0 / width;
-  y_scaling_ = 1.0 / height;
   depth_visualizer_ = depth_visualizer;
 }
 
@@ -49,11 +46,8 @@ void DeviationPlanes::update(CalibrationParameters::Parameters parameters, bool 
   double x_distance = getDistance(xPositive(), xNegative(), matrix_has_nans);
   double y_distance = getDistance(yPositive(), yNegative(), matrix_has_nans);
 
-  double x_distance_normalized = x_distance * x_scaling_;
-  double y_distance_normalized = y_distance * y_scaling_;
-
-  double x_magic_multiplier = deviation_ / x_distance_normalized;
-  double y_magic_multiplier = deviation_ / y_distance_normalized;
+  double x_magic_multiplier = deviation_ / x_distance;
+  double y_magic_multiplier = deviation_ / y_distance;
 
   magic_multipliers_ = std::make_pair(x_magic_multiplier, y_magic_multiplier);
 }
@@ -105,10 +99,7 @@ std::pair<double, double> DeviationPlanes::getDistanceDiffs(const Eigen::MatrixX
   double x_diff = distances[indexXNegative()] - distances[indexXPositive()];
   double y_diff = distances[indexYNegative()] - distances[indexYPositive()];
 
-  double x_diff_normalized = x_diff * x_scaling_;
-  double y_diff_normalized = y_diff * y_scaling_;
-
-  return std::make_pair(x_diff_normalized, y_diff_normalized);
+  return std::make_pair(x_diff, y_diff);
 }
 
 std::vector<double> DeviationPlanes::getDistances(const std::vector<Eigen::MatrixXf>& from, const Eigen::MatrixXf& to)

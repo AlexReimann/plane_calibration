@@ -15,7 +15,7 @@ namespace plane_calibration
 class DeviationPlanes
 {
 public:
-  DeviationPlanes(PlaneToDepthImage plane_to_depth, int width, int height, std::shared_ptr<DepthVisualizer> depth_visualizer);
+  DeviationPlanes(PlaneToDepthImage plane_to_depth, std::shared_ptr<DepthVisualizer> depth_visualizer);
 
   void init(CalibrationParameters::Parameters parameters);
   void update(CalibrationParameters::Parameters parameters, bool use_max_deviation = false);
@@ -50,8 +50,6 @@ protected:
   std::shared_ptr<DepthVisualizer> depth_visualizer_;
   PlaneToDepthImage plane_to_depth_;
   double deviation_;
-  double x_scaling_;
-  double y_scaling_;
 
   std::vector<Eigen::MatrixXf> planes_;
   std::vector<Eigen::Affine3d> transform_;
