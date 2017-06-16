@@ -2,12 +2,17 @@
 
 #include <iostream>
 #include <ecl/geometry/angle.hpp>
+#include <eigen_conversions/eigen_msg.h>
+#include <ros/time.h>
+#include <tf2_ros/transform_broadcaster.h>
+
 #include "plane_calibration/plane_to_depth_image.hpp"
 
 namespace plane_calibration
 {
 
-PlaneCalibration::PlaneCalibration(const CameraModel& camera_model, const CalibrationParametersPtr& parameters) :
+PlaneCalibration::PlaneCalibration(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
+                                   const std::shared_ptr<DepthVisualizer>& depth_visualizer) :
     plane_to_depth_(camera_model.getParameters())
 {
   camera_model_.update(camera_model.getParameters());
@@ -16,12 +21,14 @@ PlaneCalibration::PlaneCalibration(const CameraModel& camera_model, const Calibr
   int width = camera_model.getParameters().width_;
   int height = camera_model.getParameters().height_;
 
-  max_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height);
-  deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height);
-  temp_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height);
+  max_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height, depth_visualizer);
+  deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height, depth_visualizer);
+  temp_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height, depth_visualizer);
+
+  depth_visualizer_ = depth_visualizer;
 }
 
-std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& filtered_depth_matrix)
+std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& filtered_depth_matrix, int iterations)
 {
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -44,20 +51,32 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
     }
   }
 
+  static tf2_ros::TransformBroadcaster transform_broadcaster;
+  geometry_msgs::TransformStamped transformStamped;
+  transformStamped.header.stamp = ros::Time::now();
+  std::string frame_id = "camera_depth_optical_frame";
+  transformStamped.header.frame_id = frame_id;
+
   double x_angle_offset = 0.0;
   double y_angle_offset = 0.0;
   double deviation_buffer = ecl::degrees_to_radians(0.5);
 
   CalibrationParameters::Parameters parameters(updated_parameters);
+
   std::pair<double, double> angle_offset_estimation = max_deviation_planes_->estimateAngles(filtered_depth_matrix);
   x_angle_offset += angle_offset_estimation.first;
   y_angle_offset += angle_offset_estimation.second;
+
+//  std::cout << "max_angle_deviation: " << ecl::radians_to_degrees(parameters.deviation_) << std::endl;
+//  std::cout << "0 angles : " << ecl::radians_to_degrees(angle_offset_estimation.first) << ", "
+//      << ecl::radians_to_degrees(angle_offset_estimation.second) << std::endl;
+//  std::cout << "0 full   : " << ecl::radians_to_degrees(x_angle_offset) << ", "
+//      << ecl::radians_to_degrees(y_angle_offset) << std::endl;
 
   parameters.rotation_ = parameters.rotation_
       * Eigen::AngleAxisd(angle_offset_estimation.first, Eigen::Vector3d::UnitX())
       * Eigen::AngleAxisd(angle_offset_estimation.second, Eigen::Vector3d::UnitY());
 
-  int iterations = 3;
   for (int i = 0; i < iterations; ++i)
   {
     double max_angle_deviation = std::max(std::abs(angle_offset_estimation.first),
@@ -70,8 +89,20 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
     parameters.rotation_ = parameters.rotation_
         * Eigen::AngleAxisd(angle_offset_estimation.first, Eigen::Vector3d::UnitX())
         * Eigen::AngleAxisd(angle_offset_estimation.second, Eigen::Vector3d::UnitY());
+
     x_angle_offset += angle_offset_estimation.first;
     y_angle_offset += angle_offset_estimation.second;
+
+//    std::cout << "max_angle_deviation: " << ecl::radians_to_degrees(parameters.deviation_) << std::endl;
+//    std::cout << i + 1 << " angles : " << ecl::radians_to_degrees(angle_offset_estimation.first) << ", "
+//        << ecl::radians_to_degrees(angle_offset_estimation.second) << std::endl;
+//    std::cout << i + 1 << " full   : " << ecl::radians_to_degrees(x_angle_offset) << ", "
+//        << ecl::radians_to_degrees(y_angle_offset) << std::endl;
+
+    transformStamped.child_frame_id = "step";
+    Eigen::Affine3d transform = parameters.getTransform();
+    tf::transformEigenToMsg(transform, transformStamped.transform);
+    transform_broadcaster.sendTransform(transformStamped);
   }
 
   temp_estimated_plane_ = plane_to_depth_.convert(parameters.getTransform());
@@ -83,7 +114,7 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
 
   if (errors_above_threshold || angle_offsets_too_high)
   {
-    return best_estimated_angles_;
+//    return best_estimated_angles_;
   }
 
   deviation_planes_ = temp_deviation_planes_;

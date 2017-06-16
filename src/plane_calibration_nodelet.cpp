@@ -67,6 +67,7 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   max_noise_ = config.max_noise;
 
   max_deviation_ = ecl::degrees_to_radians(config.max_deviation_degrees);
+  iterations_ = config.iterations;
 
   Eigen::Vector3d ground_plane_offset;
   Eigen::AngleAxisd rotation = ground_plane_rotation_;
@@ -112,7 +113,7 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
 
   if (!plane_calibration_)
   {
-    plane_calibration_ = std::make_shared<PlaneCalibration>(*camera_model_, calibration_parameters_);
+    plane_calibration_ = std::make_shared<PlaneCalibration>(*camera_model_, calibration_parameters_, depth_visualizer_);
   }
 
   Eigen::MatrixXf depth_matrix;
@@ -124,9 +125,8 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
     return;
   }
 
-  CalibrationParameters::Parameters parameters;
-  bool parameters_updated = calibration_parameters_->getUpdatedParameters(parameters);
-  std::pair<double, double> one_shot_result = plane_calibration_->calibrate(depth_matrix);
+  CalibrationParameters::Parameters parameters = calibration_parameters_->getParameters();
+  std::pair<double, double> one_shot_result = plane_calibration_->calibrate(depth_matrix, iterations_);
 
   std::cout << "offset angles: " << ecl::radians_to_degrees(one_shot_result.first) << ", "
       << ecl::radians_to_degrees(one_shot_result.second) << std::endl;

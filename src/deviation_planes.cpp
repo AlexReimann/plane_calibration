@@ -1,8 +1,12 @@
 #include "plane_calibration/deviation_planes.hpp"
 
+#include <iostream>
+#include <ecl/geometry/angle.hpp>
+
 namespace plane_calibration
 {
-DeviationPlanes::DeviationPlanes(PlaneToDepthImage plane_to_depth, int width, int height) :
+DeviationPlanes::DeviationPlanes(PlaneToDepthImage plane_to_depth, int width, int height,
+                                 std::shared_ptr<DepthVisualizer> depth_visualizer) :
     plane_to_depth_(plane_to_depth)
 {
   planes_.resize(4);
@@ -10,6 +14,7 @@ DeviationPlanes::DeviationPlanes(PlaneToDepthImage plane_to_depth, int width, in
   deviation_ = 0.0;
   x_scaling_ = 1.0 / width;
   y_scaling_ = 1.0 / height;
+  depth_visualizer_ = depth_visualizer;
 }
 
 void DeviationPlanes::init(CalibrationParameters::Parameters parameters)
@@ -53,25 +58,55 @@ void DeviationPlanes::update(CalibrationParameters::Parameters parameters, bool 
   magic_multipliers_ = std::make_pair(x_magic_multiplier, y_magic_multiplier);
 }
 
-std::pair<double, double> DeviationPlanes::estimateAngles(const Eigen::MatrixXf& plane)
+std::pair<double, double> DeviationPlanes::estimateAngles(const Eigen::MatrixXf& plane, bool debug)
 {
-  std::pair<double, double> distance_diffs = getDistanceDiffs(plane);
+  std::pair<double, double> distance_diffs = getDistanceDiffs(plane, debug);
 
   double px_estimation = magic_multipliers_.first * distance_diffs.first;
   double py_estimation = magic_multipliers_.second * distance_diffs.second;
 
+  if (debug)
+  {
+    std::string frame_id = "camera_depth_optical_frame";
+    depth_visualizer_->publishCloud("debug/xpositive", xPositive(), frame_id);
+    depth_visualizer_->publishCloud("debug/xnegative", xNegative(), frame_id);
+    depth_visualizer_->publishCloud("debug/ypositive", yPositive(), frame_id);
+    depth_visualizer_->publishCloud("debug/ynegative", yNegative(), frame_id);
+
+    std::cout << "DeviationPlanes/estimateAngles: plane distance diffs: " << distance_diffs.first << ", "
+        << distance_diffs.second << std::endl;
+    std::cout << "DeviationPlanes/estimateAngles: magic_multipliers_: " << magic_multipliers_.first << ", "
+        << magic_multipliers_.second << std::endl;
+    std::cout << "DeviationPlanes/estimateAngles: angle estimations: " << ecl::radians_to_degrees(px_estimation) << ", "
+        << ecl::radians_to_degrees(py_estimation) << std::endl;
+  }
+
   return std::make_pair(px_estimation, py_estimation);
 }
 
-std::pair<double, double> DeviationPlanes::getDistanceDiffs(const Eigen::MatrixXf& plane)
+std::pair<double, double> DeviationPlanes::getDistanceDiffs(const Eigen::MatrixXf& plane, bool debug)
 {
   std::vector<double> distances = getDistances(planes_, plane);
+
+  if (debug)
+  {
+    std::string frame_id = "camera_depth_optical_frame";
+    depth_visualizer_->publishImage("debug/xpositive_diff", plane - xPositive(), frame_id);
+    depth_visualizer_->publishImage("debug/xnegative_diff", plane - xNegative(), frame_id);
+    depth_visualizer_->publishImage("debug/ypositive_diff", plane - yPositive(), frame_id);
+    depth_visualizer_->publishImage("debug/ynegative_diff", plane - yNegative(), frame_id);
+
+    for (int i = 0; i < distances.size(); ++i)
+    {
+      std::cout << "DeviationPlanes/getDistanceDiffs: plane distances: " << i << ": " << distances[i] << std::endl;
+    }
+  }
 
   double x_diff = distances[indexXNegative()] - distances[indexXPositive()];
   double y_diff = distances[indexYNegative()] - distances[indexYPositive()];
 
-  double x_diff_normalized = x_diff / plane.cols();
-  double y_diff_normalized = y_diff / plane.rows();
+  double x_diff_normalized = x_diff * x_scaling_;
+  double y_diff_normalized = y_diff * y_scaling_;
 
   return std::make_pair(x_diff_normalized, y_diff_normalized);
 }
@@ -93,6 +128,7 @@ double DeviationPlanes::getDistance(const Eigen::MatrixXf& from, const Eigen::Ma
 
   if (remove_nans)
   {
+    //TODO optimize this, so we only have to do it once for angle estimation
     difference = difference.unaryExpr([](double v)
     { return std::isnan(v) ? 0.0 : v;});
   }

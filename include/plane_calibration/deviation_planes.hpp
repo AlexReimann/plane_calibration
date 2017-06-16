@@ -4,8 +4,10 @@
 #include <utility>
 #include <memory>
 #include <Eigen/Dense>
+
 #include "calibration_parameters.hpp"
 #include "plane_to_depth_image.hpp"
+#include "depth_visualizer.hpp"
 
 namespace plane_calibration
 {
@@ -13,12 +15,13 @@ namespace plane_calibration
 class DeviationPlanes
 {
 public:
-  DeviationPlanes(PlaneToDepthImage plane_to_depth, int width, int height);
+  DeviationPlanes(PlaneToDepthImage plane_to_depth, int width, int height, std::shared_ptr<DepthVisualizer> depth_visualizer);
 
   void init(CalibrationParameters::Parameters parameters);
   void update(CalibrationParameters::Parameters parameters, bool use_max_deviation = false);
 
-  std::pair<double, double> estimateAngles(const Eigen::MatrixXf& plane);
+  std::pair<double, double> estimateAngles(const Eigen::MatrixXf& plane, bool debug = false);
+  std::pair<double, double> getDistanceDiffs(const Eigen::MatrixXf& plane, bool debug = false);
   static double getDistance(const Eigen::MatrixXf& from, const Eigen::MatrixXf& to, bool remove_nans);
 
   double getDeviation();
@@ -37,7 +40,6 @@ public:
   Eigen::Affine3d yNegativeTransform();
 
 protected:
-  std::pair<double, double> getDistanceDiffs(const Eigen::MatrixXf& plane);
   static std::vector<double> getDistances(const std::vector<Eigen::MatrixXf>& from, const Eigen::MatrixXf& to);
 
   int indexXPositive();
@@ -45,6 +47,7 @@ protected:
   int indexYPositive();
   int indexYNegative();
 
+  std::shared_ptr<DepthVisualizer> depth_visualizer_;
   PlaneToDepthImage plane_to_depth_;
   double deviation_;
   double x_scaling_;
