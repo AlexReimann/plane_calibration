@@ -28,15 +28,6 @@ public:
   std::pair<double, double> calibrate(const Eigen::MatrixXf& filtered_depth_matrix, int iterations = 3);
 
 protected:
-  class Errors
-  {
-  public:
-    double mean;
-    double max;
-  };
-
-  Errors getErrorsToBestEstimation(const Eigen::MatrixXf& matrix);
-  Errors getErrors(const Eigen::MatrixXf& plane, const Eigen::MatrixXf& matrix);
 
   mutable std::mutex mutex_;
   CameraModel camera_model_;
@@ -44,13 +35,9 @@ protected:
 
   PlaneToDepthImage plane_to_depth_;
   DeviationPlanesPtr max_deviation_planes_;
-  DeviationPlanesPtr deviation_planes_;
 
   DeviationPlanesPtr temp_deviation_planes_;
   Eigen::MatrixXf temp_estimated_plane_;
-
-  std::pair<double, double> best_estimated_angles_;
-  Eigen::MatrixXf best_estimated_plane_;
 
   std::shared_ptr<DepthVisualizer> depth_visualizer_;
 };

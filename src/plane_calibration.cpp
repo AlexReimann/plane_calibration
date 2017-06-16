@@ -22,7 +22,6 @@ PlaneCalibration::PlaneCalibration(const CameraModel& camera_model, const Calibr
   int height = camera_model.getParameters().height_;
 
   max_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height, depth_visualizer);
-  deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height, depth_visualizer);
   temp_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, width, height, depth_visualizer);
 
   depth_visualizer_ = depth_visualizer;
@@ -37,25 +36,8 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
 
   if (parameters_updated)
   {
-    deviation_planes_->update(updated_parameters);
     max_deviation_planes_->update(updated_parameters);
   }
-
-  if (!parameters_updated)
-  {
-    Errors current_errors = getErrorsToBestEstimation(filtered_depth_matrix);
-    bool current_errors_above_threshold = true; //TODO
-    if (!current_errors_above_threshold)
-    {
-      return best_estimated_angles_;
-    }
-  }
-
-  static tf2_ros::TransformBroadcaster transform_broadcaster;
-  geometry_msgs::TransformStamped transformStamped;
-  transformStamped.header.stamp = ros::Time::now();
-  std::string frame_id = "camera_depth_optical_frame";
-  transformStamped.header.frame_id = frame_id;
 
   double x_angle_offset = 0.0;
   double y_angle_offset = 0.0;
@@ -98,54 +80,9 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
 //        << ecl::radians_to_degrees(angle_offset_estimation.second) << std::endl;
 //    std::cout << i + 1 << " full   : " << ecl::radians_to_degrees(x_angle_offset) << ", "
 //        << ecl::radians_to_degrees(y_angle_offset) << std::endl;
-
-    transformStamped.child_frame_id = "step";
-    Eigen::Affine3d transform = parameters.getTransform();
-    tf::transformEigenToMsg(transform, transformStamped.transform);
-    transform_broadcaster.sendTransform(transformStamped);
   }
 
-  temp_estimated_plane_ = plane_to_depth_.convert(parameters.getTransform());
-  Errors errors = getErrors(temp_estimated_plane_, filtered_depth_matrix);
-
-  bool errors_above_threshold = false; //TODO
-  bool angle_offsets_too_high = std::abs(x_angle_offset) > parameters.max_deviation_
-      || std::abs(y_angle_offset) > parameters.max_deviation_;
-
-  if (errors_above_threshold || angle_offsets_too_high)
-  {
-//    return best_estimated_angles_;
-  }
-
-  deviation_planes_ = temp_deviation_planes_;
-  best_estimated_plane_ = temp_estimated_plane_;
-  best_estimated_angles_ = std::make_pair(x_angle_offset, y_angle_offset);
-  return best_estimated_angles_;
-}
-
-PlaneCalibration::Errors PlaneCalibration::getErrorsToBestEstimation(const Eigen::MatrixXf& matrix)
-{
-  return getErrors(best_estimated_plane_, matrix);
-}
-
-PlaneCalibration::Errors PlaneCalibration::getErrors(const Eigen::MatrixXf& plane, const Eigen::MatrixXf& matrix)
-{
-  Eigen::MatrixXf difference = (matrix - plane).cwiseAbs();
-
-  // (nan == nan) gives false
-  int not_nan_count = (difference.array() == difference.array()).count();
-
-  //remove nans
-  difference = difference.unaryExpr([](float v)
-  { return std::isnan(v) ? 0.0 : v;});
-
-  double mean = difference.sum() / not_nan_count;
-
-  Errors errors;
-  errors.mean = mean;
-  errors.max = difference.maxCoeff();
-
-  return errors;
+  return std::make_pair(x_angle_offset, y_angle_offset);
 }
 
 } /* end namespace */
