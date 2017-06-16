@@ -129,8 +129,8 @@ double DeviationPlanes::getDistance(const Eigen::MatrixXf& from, const Eigen::Ma
   if (remove_nans)
   {
     //TODO optimize this, so we only have to do it once for angle estimation
-    difference = difference.unaryExpr([](double v)
-    { return std::isnan(v) ? 0.0 : v;});
+    difference = difference.unaryExpr([](float v)
+    { return std::isnan(v) ? 0.0f : v;});
   }
 
   double distance = difference.sum();
