@@ -98,6 +98,7 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
 
   use_manual_ground_transform_ = config.use_manual_ground_transform;
 
+  calibration_validation_config_.too_low_buffer = config.input_max_noise;
   calibration_validation_config_.max_too_low_ratio = config.plane_max_too_low_ratio;
   calibration_validation_config_.max_mean = config.plane_max_mean;
   calibration_validation_config_.max_deviation = config.plane_max_deviation;
@@ -239,6 +240,7 @@ std::pair<Eigen::Vector3d, Eigen::AngleAxisd> PlaneCalibrationNodelet::getTransf
 
   Eigen::Vector3d sensor_z_axis = Eigen::Vector3d::UnitZ();
   double sensor_height = eigen_transform.translation()(2);
+
   Eigen::Vector3d sensor_z_axis_in_footprint = eigen_transform.linear() * sensor_z_axis;
   double z_component = sensor_z_axis_in_footprint.z();
   double scale_to_ground = -sensor_height / z_component;

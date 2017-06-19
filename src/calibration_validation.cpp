@@ -54,7 +54,8 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
   difference = difference.unaryExpr([](float v)
   { return std::isnan(v) ? 0.0f : v;});
 
-  int is_too_low = (difference.array() < 0.0).count();
+  double too_low_distance = 0.0 - config_.too_low_buffer;
+  int is_too_low = (difference.array() < too_low_distance).count();
   double too_low_ratio = is_too_low / (double)not_nan_count;
 
   double mean = difference.sum() / not_nan_count;
