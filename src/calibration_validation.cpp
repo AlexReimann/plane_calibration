@@ -45,7 +45,7 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
                                                 bool debug)
 {
   std::lock_guard<std::mutex> lock(mutex_);
-  Eigen::MatrixXf difference = (ground_plane - data).cwiseAbs();
+  Eigen::MatrixXf difference = (ground_plane - data);
 
   // (nan == nan) gives false
   int not_nan_count = (difference.array() == difference.array()).count();
@@ -58,8 +58,7 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
   double too_low_ratio = is_too_low / (double)not_nan_count;
 
   double mean = difference.sum() / not_nan_count;
-  //taking abs values above
-  double max_deviation = difference.maxCoeff();
+  double max_deviation = difference.cwiseAbs().maxCoeff();
 
   if (debug)
   {
