@@ -45,8 +45,6 @@ void PlaneCalibrationNodelet::onInit()
   ros::NodeHandle node_handle = this->getPrivateNodeHandle();
   depth_visualizer_ = std::make_shared<DepthVisualizer>(node_handle);
 
-  pub_transform_ = node_handle.advertise<tf2_msgs::TFMessage>("adjusted_tf", 1);
-
   sub_camera_info_ = node_handle.subscribe<sensor_msgs::CameraInfo>("camera_info", 1,
                                                                     &PlaneCalibrationNodelet::cameraInfoCB, this);
   sub_depth_image_ = node_handle.subscribe<sensor_msgs::Image>("input_depth_image", 1,
@@ -367,7 +365,7 @@ void PlaneCalibrationNodelet::publishTransform()
   std::string frame_id = "camera_depth_optical_frame";
   transformStamped.header.frame_id = frame_id;
 
-  transformStamped.child_frame_id = "calibrated_plane";
+  transformStamped.child_frame_id = "calibrated_ground";
   tf::transformEigenToMsg(last_valid_calibration_transformation_, transformStamped.transform);
   transform_broadcaster.sendTransform(transformStamped);
 
