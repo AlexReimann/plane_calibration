@@ -61,19 +61,18 @@ void InputFilter::filter(Eigen::MatrixXf& matrix, bool debug)
 
   if (debug)
   {
-    std::string frame_id = "camera_depth_optical_frame";
-    depth_visualizer_->publishCloud("debug/filter/top_border", max_plane_, frame_id);
-    depth_visualizer_->publishCloud("debug/filter/bottom_border", min_plane_, frame_id);
-    depth_visualizer_->publishImage("debug/filter/min_plane", max_plane_, frame_id);
-    depth_visualizer_->publishImage("debug/filter/max_plane", max_plane_, frame_id);
+    depth_visualizer_->publishCloud("debug/filter/top_border", max_plane_);
+    depth_visualizer_->publishCloud("debug/filter/bottom_border", min_plane_);
+    depth_visualizer_->publishImage("debug/filter/min_plane", max_plane_);
+    depth_visualizer_->publishImage("debug/filter/max_plane", max_plane_);
 
-    depth_visualizer_->publishImage("debug/filter/far_enough", far_enough.cast<float>(), frame_id);
-    depth_visualizer_->publishImage("debug/filter/close_enough", close_enough.cast<float>(), frame_id);
+    depth_visualizer_->publishImage("debug/filter/far_enough", far_enough.cast<float>());
+    depth_visualizer_->publishImage("debug/filter/close_enough", close_enough.cast<float>());
 
-    depth_visualizer_->publishImage("debug/filter/diff_min", min_plane_ - matrix, frame_id);
-    depth_visualizer_->publishImage("debug/filter/diff_max", max_plane_ - matrix, frame_id);
-    depth_visualizer_->publishImage("debug/filter/not_filtered", valid, frame_id);
-    depth_visualizer_->publishCloud("debug/filter/filtered", matrix, frame_id);
+    depth_visualizer_->publishImage("debug/filter/diff_min", min_plane_ - matrix);
+    depth_visualizer_->publishImage("debug/filter/diff_max", max_plane_ - matrix);
+    depth_visualizer_->publishImage("debug/filter/not_filtered", valid);
+    depth_visualizer_->publishCloud("debug/filter/filtered", matrix);
   }
 }
 

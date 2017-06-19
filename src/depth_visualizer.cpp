@@ -10,9 +10,10 @@
 namespace plane_calibration
 {
 
-DepthVisualizer::DepthVisualizer(ros::NodeHandle node_handle) :
+DepthVisualizer::DepthVisualizer(ros::NodeHandle node_handle, std::string frame_id) :
     node_handle_(node_handle)
 {
+  frame_id_ = frame_id;
 }
 
 void DepthVisualizer::setCameraModel(const image_geometry::PinholeCameraModel& camera_model)
@@ -21,7 +22,7 @@ void DepthVisualizer::setCameraModel(const image_geometry::PinholeCameraModel& c
   camera_model_ = camera_model;
 }
 
-void DepthVisualizer::publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id)
+void DepthVisualizer::publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix)
 {
   addPublisherIfNotExist<sensor_msgs::Image>(topic);
 
@@ -31,7 +32,7 @@ void DepthVisualizer::publishImage(const std::string& topic, const Eigen::Matrix
   }
 
   sensor_msgs::Image image_msg;
-  image_msg.header.frame_id = frame_id;
+  image_msg.header.frame_id = frame_id_;
   ImageMsgEigenConverter::convert(image_matrix, image_msg);
   publishImage(topic, image_msg);
 }
@@ -47,7 +48,7 @@ void DepthVisualizer::publishImage(const std::string& topic, const sensor_msgs::
 }
 
 void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::Affine3d& plane_transformation,
-                                   const CameraModel::Parameters& camera_model_paramaters, std::string frame_id)
+                                   const CameraModel::Parameters& camera_model_paramaters)
 {
   addPublisherIfNotExist<sensor_msgs::PointCloud2>(topic);
 
@@ -59,12 +60,12 @@ void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::Affine
   Eigen::MatrixXf plane = PlaneToDepthImage::convert(plane_transformation, camera_model_paramaters);
 
   sensor_msgs::Image image_msg;
-  image_msg.header.frame_id = frame_id;
+  image_msg.header.frame_id = frame_id_;
   ImageMsgEigenConverter::convert(plane, image_msg);
   publishCloud(topic, image_msg);
 }
 
-void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id)
+void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix)
 {
   addPublisherIfNotExist<sensor_msgs::PointCloud2>(topic);
 
@@ -74,7 +75,7 @@ void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::Matrix
   }
 
   sensor_msgs::Image image_msg;
-  image_msg.header.frame_id = frame_id;
+  image_msg.header.frame_id = frame_id_;
   ImageMsgEigenConverter::convert(image_matrix, image_msg);
   publishCloud(topic, image_msg);
 }

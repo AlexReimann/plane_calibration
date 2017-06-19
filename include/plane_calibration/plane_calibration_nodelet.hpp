@@ -81,6 +81,9 @@ protected:
   std::atomic<double> py_offset_;
   std::atomic<double> pz_offset_;
 
+  std::string camera_depth_frame_;
+  std::string result_frame_;
+
   ros::Subscriber sub_camera_info_;
   ros::Subscriber sub_depth_image_;
 };

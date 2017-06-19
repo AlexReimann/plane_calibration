@@ -61,11 +61,10 @@ std::pair<double, double> DeviationPlanes::estimateAngles(const Eigen::MatrixXf&
 
   if (debug)
   {
-    std::string frame_id = "camera_depth_optical_frame";
-    depth_visualizer_->publishCloud("debug/xpositive", xPositive(), frame_id);
-    depth_visualizer_->publishCloud("debug/xnegative", xNegative(), frame_id);
-    depth_visualizer_->publishCloud("debug/ypositive", yPositive(), frame_id);
-    depth_visualizer_->publishCloud("debug/ynegative", yNegative(), frame_id);
+    depth_visualizer_->publishCloud("debug/xpositive", xPositive());
+    depth_visualizer_->publishCloud("debug/xnegative", xNegative());
+    depth_visualizer_->publishCloud("debug/ypositive", yPositive());
+    depth_visualizer_->publishCloud("debug/ynegative", yNegative());
 
     std::cout << "DeviationPlanes/estimateAngles: plane distance diffs: " << distance_diffs.first << ", "
         << distance_diffs.second << std::endl;
@@ -84,11 +83,10 @@ std::pair<double, double> DeviationPlanes::getDistanceDiffs(const Eigen::MatrixX
 
   if (debug)
   {
-    std::string frame_id = "camera_depth_optical_frame";
-    depth_visualizer_->publishImage("debug/xpositive_diff", plane - xPositive(), frame_id);
-    depth_visualizer_->publishImage("debug/xnegative_diff", plane - xNegative(), frame_id);
-    depth_visualizer_->publishImage("debug/ypositive_diff", plane - yPositive(), frame_id);
-    depth_visualizer_->publishImage("debug/ynegative_diff", plane - yNegative(), frame_id);
+    depth_visualizer_->publishImage("debug/xpositive_diff", plane - xPositive());
+    depth_visualizer_->publishImage("debug/xnegative_diff", plane - xNegative());
+    depth_visualizer_->publishImage("debug/ypositive_diff", plane - yPositive());
+    depth_visualizer_->publishImage("debug/ynegative_diff", plane - yNegative());
 
     for (int i = 0; i < distances.size(); ++i)
     {

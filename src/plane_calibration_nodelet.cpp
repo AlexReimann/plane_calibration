@@ -43,7 +43,11 @@ void PlaneCalibrationNodelet::onInit()
   reconfigure_server_->setCallback(reconfigure_cb);
 
   ros::NodeHandle node_handle = this->getPrivateNodeHandle();
-  depth_visualizer_ = std::make_shared<DepthVisualizer>(node_handle);
+
+  node_handle.param("camera_depth_frame", camera_depth_frame_, std::string("camera_depth_optical_frame"));
+  node_handle.param("result_camera_depth_frame", result_frame_, std::string("ground_plane_frame"));
+
+  depth_visualizer_ = std::make_shared<DepthVisualizer>(node_handle, camera_depth_frame_);
 
   sub_camera_info_ = node_handle.subscribe<sensor_msgs::CameraInfo>("camera_info", 1,
                                                                     &PlaneCalibrationNodelet::cameraInfoCB, this);
@@ -247,8 +251,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
     geometry_msgs::TransformStamped transformStamped;
 
     transformStamped.header.stamp = ros::Time::now();
-    std::string frame_id = "camera_depth_optical_frame";
-    transformStamped.header.frame_id = frame_id;
+    transformStamped.header.frame_id = camera_depth_frame_;
 
     CalibrationParameters::Parameters parameters = calibration_parameters_->getParameters();
 
@@ -257,7 +260,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
     transform_broadcaster.sendTransform(transformStamped);
 
     depth_visualizer_->publishCloud("debug/uncalibrated_ground", parameters.getTransform(),
-                                    camera_model_->getParameters(), frame_id);
+                                    camera_model_->getParameters());
   }
 
   input_filter_->filter(depth_matrix, debug_);
@@ -301,8 +304,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
 
     Eigen::Affine3d transform = Eigen::Translation3d(parameters.ground_plane_offset_) * rotation;
 
-    std::string frame_id = "camera_depth_optical_frame";
-    depth_visualizer_->publishCloud("debug/calibration_result", transform, camera_model_->getParameters(), frame_id);
+    depth_visualizer_->publishCloud("debug/calibration_result", transform, camera_model_->getParameters());
   }
 
   //  std::cout << "offset angles: " << ecl::radians_to_degrees(one_shot_result.first) << ", "
@@ -362,17 +364,16 @@ void PlaneCalibrationNodelet::publishTransform()
   geometry_msgs::TransformStamped transformStamped;
 
   transformStamped.header.stamp = ros::Time::now();
-  std::string frame_id = "camera_depth_optical_frame";
-  transformStamped.header.frame_id = frame_id;
+  transformStamped.header.frame_id = camera_depth_frame_;
 
-  transformStamped.child_frame_id = "calibrated_ground";
+  transformStamped.child_frame_id = result_frame_;
   tf::transformEigenToMsg(last_valid_calibration_transformation_, transformStamped.transform);
   transform_broadcaster.sendTransform(transformStamped);
 
   if (debug_)
   {
     depth_visualizer_->publishCloud("debug/calibrated_plane", last_valid_calibration_transformation_,
-                                    camera_model_->getParameters(), frame_id);
+                                    camera_model_->getParameters());
   }
 }
 

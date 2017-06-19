@@ -20,16 +20,15 @@ namespace plane_calibration
 class DepthVisualizer
 {
 public:
-  DepthVisualizer(ros::NodeHandle node_handle);
+  DepthVisualizer(ros::NodeHandle node_handle, std::string frame_id = std::string("camera_depth_optical_frame"));
 
   void setCameraModel(const image_geometry::PinholeCameraModel& camera_model);
 
-  void publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id =
-                        "not_set_by_plane_calibration_DepthVisualizer");
+  void publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix);
   void publishImage(const std::string& topic, const sensor_msgs::Image& image_msg);
   void publishCloud(const std::string& topic, const Eigen::Affine3d& plane_transformation,
-                    const CameraModel::Parameters& camera_model_paramaters, std::string frame_id);
-  void publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id);
+                    const CameraModel::Parameters& camera_model_paramaters);
+  void publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix);
   void publishCloud(const std::string& topic, const sensor_msgs::Image& image_msg);
 
   void publishDouble(const std::string& topic, const double& value);
@@ -43,6 +42,7 @@ protected:
   sensor_msgs::PointCloud2Ptr imageMsgToPointCloud(const sensor_msgs::Image& image_msg);
 
   ros::NodeHandle node_handle_;
+  std::string frame_id_;
   std::mutex camera_model_mutex_;
   image_geometry::PinholeCameraModel camera_model_;
   std::map<std::string, ros::Publisher> publishers_;
