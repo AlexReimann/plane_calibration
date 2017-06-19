@@ -61,8 +61,8 @@ void InputFilter::filter(Eigen::MatrixXf& matrix, bool debug)
 
   if (debug)
   {
-    depth_visualizer_->publishCloud("debug/filter/top_border", max_plane_);
-    depth_visualizer_->publishCloud("debug/filter/bottom_border", min_plane_);
+    depth_visualizer_->publishCloud("debug/filter/far_border", max_plane_);
+    depth_visualizer_->publishCloud("debug/filter/near_border", min_plane_);
     depth_visualizer_->publishImage("debug/filter/min_plane", max_plane_);
     depth_visualizer_->publishImage("debug/filter/max_plane", max_plane_);
 
