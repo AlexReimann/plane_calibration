@@ -83,7 +83,7 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
     if (debug)
     {
       ROS_WARN_STREAM(
-          "[PlaneCalibrationNodelet]: Calibration result mean error is too high (max: " << config_.max_mean << "): " << mean);
+          "[PlaneCalibrationNodelet]: Calibration result abs mean error is too high (max: " << config_.max_mean << "): " << std::abs(mean));
     }
     return false;
   }
