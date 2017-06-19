@@ -1,7 +1,7 @@
 #include "plane_calibration/input_filter.hpp"
 
-#include <iostream>
 #include "plane_calibration/plane_to_depth_image.hpp"
+#include <ros/console.h>
 
 namespace plane_calibration
 {
@@ -71,7 +71,7 @@ void InputFilter::filter(Eigen::MatrixXf& matrix, bool debug)
   }
 }
 
-bool InputFilter::dataIsUsable(const Eigen::MatrixXf& data)
+bool InputFilter::dataIsUsable(const Eigen::MatrixXf& data, bool debug)
 {
   std::lock_guard<std::mutex> lock(mutex_);
   double data_size = data.size();
@@ -81,6 +81,11 @@ bool InputFilter::dataIsUsable(const Eigen::MatrixXf& data)
 
   if (nan_ratio > config_.max_nan_ratio)
   {
+    if (debug)
+    {
+      ROS_WARN_STREAM(
+          "[PlaneCalibrationNodelet]: Input data nan ratio bigger than max (" << config_.max_nan_ratio << "): " << nan_ratio);
+    }
     return false;
   }
 
@@ -90,12 +95,22 @@ bool InputFilter::dataIsUsable(const Eigen::MatrixXf& data)
 
   if (zero_ratio > config_.max_zero_ratio)
   {
+    if (debug)
+    {
+      ROS_WARN_STREAM(
+          "[PlaneCalibrationNodelet]: Input data zero ratio bigger than max (" << config_.max_zero_ratio << "): " << zero_ratio);
+    }
     return false;
   }
 
   double data_ratio = data_size / data.size();
   if (data_ratio < config_.min_data_ratio)
   {
+    if (debug)
+    {
+      ROS_WARN_STREAM(
+          "[PlaneCalibrationNodelet]: Input data data ratio smaller than min (" << config_.min_data_ratio << "): " << data_ratio);
+    }
     return false;
   }
 

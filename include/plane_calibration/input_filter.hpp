@@ -42,7 +42,7 @@ public:
 
   void updateConfig(const Config& config);
   void filter(Eigen::MatrixXf& matrix, bool debug = false);
-  bool dataIsUsable(const Eigen::MatrixXf& data);
+  bool dataIsUsable(const Eigen::MatrixXf& data, bool debug = false);
 
 protected:
   void updateBorders_();

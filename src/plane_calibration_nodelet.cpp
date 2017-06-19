@@ -219,7 +219,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
 
   input_filter_->filter(depth_matrix, debug_);
 
-  bool input_data_not_usable = !input_filter_->dataIsUsable(depth_matrix);
+  bool input_data_not_usable = !input_filter_->dataIsUsable(depth_matrix, debug_);
   if (input_data_not_usable)
   {
     if (debug_)
