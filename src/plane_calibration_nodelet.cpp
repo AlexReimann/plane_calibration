@@ -289,7 +289,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
   Eigen::Affine3d transform = Eigen::Translation3d(parameters.ground_plane_offset_) * rotation;
   Eigen::MatrixXf new_ground_plane = plane_to_depth_converter_->convert(transform);
 
-  bool good_calibration = calibration_validation_->groundPlaneFitsData(new_ground_plane, depth_matrix);
+  bool good_calibration = calibration_validation_->groundPlaneFitsData(new_ground_plane, depth_matrix, debug_);
   if (!good_calibration)
   {
     if (debug_)

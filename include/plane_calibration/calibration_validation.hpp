@@ -29,12 +29,13 @@ public:
     double max_deviation;
   };
 
-  CalibrationValidation(const CameraModel& camera_model, const CalibrationParametersPtr& parameters, const Config& config);
+  CalibrationValidation(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
+                        const Config& config);
 
   void updateConfig(const Config& new_config);
 
   bool angleOffsetValid(std::pair<double, double> angles);
-  bool groundPlaneFitsData(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data);
+  bool groundPlaneFitsData(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data, bool debug = false);
 
 protected:
   mutable std::mutex mutex_;

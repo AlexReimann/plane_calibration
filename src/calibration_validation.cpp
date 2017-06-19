@@ -1,5 +1,7 @@
 #include "plane_calibration/calibration_validation.hpp"
 
+#include <ros/console.h>
+
 namespace plane_calibration
 {
 
@@ -27,7 +29,8 @@ bool CalibrationValidation::angleOffsetValid(std::pair<double, double> angles)
   return true;
 }
 
-bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data)
+bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data,
+                                                bool debug)
 {
   std::lock_guard<std::mutex> lock(mutex_);
   Eigen::MatrixXf difference = (ground_plane - data).cwiseAbs();
@@ -44,12 +47,22 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
 
   if (too_low_ratio > config_.max_too_low_ratio)
   {
+    if (debug)
+    {
+      ROS_WARN_STREAM(
+          "[PlaneCalibrationNodelet]: Calibration result ground has too many points below it, ratio (max: " << config_.max_too_low_ratio << "): " << too_low_ratio);
+    }
     return false;
   }
 
   double mean = difference.sum() / not_nan_count;
   if (std::abs(mean) > config_.max_mean)
   {
+    if (debug)
+    {
+      ROS_WARN_STREAM(
+          "[PlaneCalibrationNodelet]: Calibration result mean error is too high (max: " << config_.max_mean << "): " << mean);
+    }
     return false;
   }
 
@@ -57,6 +70,11 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
   double max_deviation = difference.maxCoeff();
   if (max_deviation > config_.max_deviation)
   {
+    if (debug)
+    {
+      ROS_WARN_STREAM(
+          "[PlaneCalibrationNodelet]: Calibration result max error is too high (max: " << config_.max_deviation << "): " << max_deviation);
+    }
     return false;
   }
 
