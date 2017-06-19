@@ -2,8 +2,10 @@
   <arg name="nodelet_manager_name"      default="plane_calibration_manager"/>
   <arg name="camera_info_topic"         default="/camera/depth/camera_info"/>
   <arg name="input_depth_image_topic"   default="/camera/depth/image"/>
+  <arg name="parameter_file_path"       default="$(find plane_calibration)/params/defaults.yaml"/>
 
   <node pkg="nodelet" type="nodelet" name="plane_calibration" args="load plane_calibration/PlaneCalibrationNodelet $(arg nodelet_manager_name)">
+    <rosparam file="$(arg parameter_file_path)"           command="load"/>
     <remap from="plane_calibration/camera_info"           to="$(arg camera_info_topic)"/>
     <remap from="plane_calibration/input_depth_image"     to="$(arg input_depth_image_topic)"/>
   </node>
