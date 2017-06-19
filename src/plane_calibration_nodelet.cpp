@@ -16,7 +16,8 @@
 namespace plane_calibration
 {
 
-PlaneCalibrationNodelet::PlaneCalibrationNodelet()
+PlaneCalibrationNodelet::PlaneCalibrationNodelet() :
+    transform_listener_buffer_(), transform_listener_(transform_listener_buffer_)
 {
   debug_ = false;
   ground_plane_rotation_ = Eigen::AngleAxisd::Identity();
@@ -162,8 +163,37 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
     return;
   }
 
+  getTransform();
+
+  if (!transform_)
+  {
+    return;
+  }
+
   runCalibration(depth_matrix);
   publishTransform();
+}
+
+void PlaneCalibrationNodelet::getTransform()
+{
+  geometry_msgs::TransformStamped transformStamped;
+  try
+  {
+    transformStamped = transform_listener_buffer_.lookupTransform("base_footprint", "sensor_3d_short_range_depth_optical_frame",
+                                                                  ros::Time(0));
+  }
+  catch (tf2::TransformException &ex)
+  {
+    ROS_WARN("%s", ex.what());
+    return;
+  }
+
+  if (!transform_)
+  {
+    ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Got transform to ground, will do calibration from now");
+  }
+
+  transform_ = std::make_shared<geometry_msgs::TransformStamped>(transformStamped);
 }
 
 void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)

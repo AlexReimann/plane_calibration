@@ -12,6 +12,8 @@
 #include <ros/subscriber.h>
 #include <ros/publisher.h>
 #include <sensor_msgs/Image.h>
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/TransformStamped.h>
 
 #include "camera_model.hpp"
 #include "calibration_parameters.hpp"
@@ -36,11 +38,16 @@ protected:
   virtual void cameraInfoCB(const sensor_msgs::CameraInfoConstPtr& camera_info_msg);
   virtual void depthImageCB(const sensor_msgs::ImageConstPtr& depth_image_msg);
 
+  virtual void getTransform();
   virtual void runCalibration(Eigen::MatrixXf depth_matrix);
   virtual void publishTransform();
 
   CameraModelPtr camera_model_;
   CalibrationParametersPtr calibration_parameters_;
+  tf2_ros::Buffer transform_listener_buffer_;
+  tf2_ros::TransformListener transform_listener_;
+  std::shared_ptr<geometry_msgs::TransformStamped> transform_;
+
   InputFilterPtr input_filter_;
   PlaneCalibrationPtr plane_calibration_;
   CalibrationValidationPtr calibration_validation_;
