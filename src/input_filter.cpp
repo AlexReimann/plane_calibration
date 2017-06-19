@@ -79,6 +79,19 @@ bool InputFilter::dataIsUsable(const Eigen::MatrixXf& data, bool debug)
   int nan_count = (data.array() != data.array()).count();
   double nan_ratio = nan_count / data_size;
 
+  data_size = data_size - nan_count;
+  int zero_count = (data.array() == 0.0).count();
+  double zero_ratio = zero_count / data_size;
+
+  double data_ratio = data_size / data.size();
+
+  if (debug)
+  {
+    depth_visualizer_->publishDouble("debug/input_nan_ratio", nan_ratio);
+    depth_visualizer_->publishDouble("debug/input_zero_ratio", zero_ratio);
+    depth_visualizer_->publishDouble("debug/input_data_ratio", data_ratio);
+  }
+
   if (nan_ratio > config_.max_nan_ratio)
   {
     if (debug)
@@ -88,10 +101,6 @@ bool InputFilter::dataIsUsable(const Eigen::MatrixXf& data, bool debug)
     }
     return false;
   }
-
-  data_size = data_size - nan_count;
-  int zero_count = (data.array() == 0.0).count();
-  double zero_ratio = zero_count / data_size;
 
   if (zero_ratio > config_.max_zero_ratio)
   {
@@ -103,7 +112,6 @@ bool InputFilter::dataIsUsable(const Eigen::MatrixXf& data, bool debug)
     return false;
   }
 
-  double data_ratio = data_size / data.size();
   if (data_ratio < config_.min_data_ratio)
   {
     if (debug)
