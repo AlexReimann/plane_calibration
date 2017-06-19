@@ -41,7 +41,6 @@ protected:
   virtual void getTransform();
   virtual std::pair<Eigen::Vector3d, Eigen::AngleAxisd> getTransformManual();
   virtual std::pair<Eigen::Vector3d, Eigen::AngleAxisd> getTransformTF();
-  virtual void resetCalibrationResult();
 
   virtual void runCalibration(Eigen::MatrixXf depth_matrix);
   virtual void publishTransform();

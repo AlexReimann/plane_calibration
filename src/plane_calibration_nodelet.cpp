@@ -22,7 +22,14 @@ PlaneCalibrationNodelet::PlaneCalibrationNodelet() :
   debug_ = false;
   use_manual_ground_transform_ = false;
   ground_plane_rotation_ = Eigen::AngleAxisd::Identity();
-  resetCalibrationResult();
+
+  last_valid_calibration_result_ = std::make_pair(0.0, 0.0);
+
+  Eigen::AngleAxisd rotation;
+  rotation = Eigen::AngleAxisd(last_valid_calibration_result_.first, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(last_valid_calibration_result_.second, Eigen::Vector3d::UnitY());
+
+  last_valid_calibration_transformation_ = Eigen::Translation3d(0.0, 0.0, 0.0) * rotation;
 }
 
 void PlaneCalibrationNodelet::onInit()
@@ -196,7 +203,11 @@ void PlaneCalibrationNodelet::getTransform()
   if (transform_changed)
   {
     ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Sensor transform changed, resetting calibration");
-    resetCalibrationResult();
+
+    last_valid_calibration_result_plane_ = Eigen::MatrixXf();
+    last_valid_calibration_result_ = std::make_pair(0.0, 0.0);
+    last_valid_calibration_transformation_ = Eigen::Translation3d(transform.first) * transform.second;
+
     transform_ = std::make_shared<std::pair<Eigen::Vector3d, Eigen::AngleAxisd>>(transform);
     calibration_parameters_->update(transform_->first, transform_->second);
     input_filter_->updateBorders();
@@ -228,13 +239,6 @@ std::pair<Eigen::Vector3d, Eigen::AngleAxisd> PlaneCalibrationNodelet::getTransf
   Eigen::AngleAxisd rotation;
   rotation = eigen_transform.rotation();
   return std::make_pair(eigen_transform.translation(), rotation);
-}
-
-void PlaneCalibrationNodelet::resetCalibrationResult()
-{
-  last_valid_calibration_result_plane_ = Eigen::MatrixXf();
-  last_valid_calibration_result_ = std::make_pair(0.0, 0.0);
-  last_valid_calibration_transformation_ = Eigen::Affine3d();
 }
 
 void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
