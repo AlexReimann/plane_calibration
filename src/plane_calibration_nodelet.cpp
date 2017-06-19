@@ -251,7 +251,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
   if (debug_)
   {
     ROS_INFO_STREAM(
-        "[PlaneCalibrationNodelet]: Calibration result angles [degree]: " << ecl::radians_to_degrees(calibration_result.first) << ", " << calibration_result.second);
+        "[PlaneCalibrationNodelet]: Calibration result angles [degree]: " << ecl::radians_to_degrees(calibration_result.first) << ", " << ecl::radians_to_degrees(calibration_result.second));
 
     Eigen::AngleAxisd rotation;
     rotation = parameters.rotation_ * Eigen::AngleAxisd(calibration_result.first, Eigen::Vector3d::UnitX())
