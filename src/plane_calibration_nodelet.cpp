@@ -44,6 +44,7 @@ void PlaneCalibrationNodelet::onInit()
 
   ros::NodeHandle node_handle = this->getPrivateNodeHandle();
 
+  node_handle.param("ground_frame", ground_frame_, std::string("base_footprint"));
   node_handle.param("camera_depth_frame", camera_depth_frame_, std::string("camera_depth_optical_frame"));
   node_handle.param("result_camera_depth_frame", result_frame_, std::string("ground_plane_frame"));
 
@@ -231,16 +232,20 @@ std::pair<Eigen::Vector3d, Eigen::AngleAxisd> PlaneCalibrationNodelet::getTransf
 {
   geometry_msgs::TransformStamped transformStamped;
 
-  transformStamped = transform_listener_buffer_.lookupTransform("base_footprint",
-                                                                "sensor_3d_short_range_depth_optical_frame",
-                                                                ros::Time(0));
+  transformStamped = transform_listener_buffer_.lookupTransform(ground_frame_, camera_depth_frame_, ros::Time(0));
 
   Eigen::Affine3d eigen_transform;
   tf::transformMsgToEigen(transformStamped.transform, eigen_transform);
 
-  Eigen::AngleAxisd rotation;
-  rotation = eigen_transform.rotation();
-  return std::make_pair(eigen_transform.translation(), rotation);
+  Eigen::Vector3d sensor_z_axis = Eigen::Vector3d::UnitZ();
+  double sensor_height = eigen_transform.translation()(2);
+  Eigen::Vector3d sensor_z_axis_in_footprint = eigen_transform.linear() * sensor_z_axis;
+  double z_component = sensor_z_axis_in_footprint.z();
+  double scale_to_ground = -sensor_height / z_component;
+
+  Eigen::AngleAxisd rotation(eigen_transform.inverse().rotation());
+
+  return std::make_pair(scale_to_ground * sensor_z_axis, rotation);
 }
 
 void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)

@@ -81,6 +81,7 @@ protected:
   std::atomic<double> py_offset_;
   std::atomic<double> pz_offset_;
 
+  std::string ground_frame_;
   std::string camera_depth_frame_;
   std::string result_frame_;
 
