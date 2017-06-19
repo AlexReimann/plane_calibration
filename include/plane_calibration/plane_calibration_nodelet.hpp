@@ -39,6 +39,10 @@ protected:
   virtual void depthImageCB(const sensor_msgs::ImageConstPtr& depth_image_msg);
 
   virtual void getTransform();
+  virtual std::pair<Eigen::Vector3d, Eigen::AngleAxisd> getTransformManual();
+  virtual std::pair<Eigen::Vector3d, Eigen::AngleAxisd> getTransformTF();
+  virtual void resetCalibrationResult();
+
   virtual void runCalibration(Eigen::MatrixXf depth_matrix);
   virtual void publishTransform();
 
@@ -46,7 +50,7 @@ protected:
   CalibrationParametersPtr calibration_parameters_;
   tf2_ros::Buffer transform_listener_buffer_;
   tf2_ros::TransformListener transform_listener_;
-  std::shared_ptr<geometry_msgs::TransformStamped> transform_;
+  std::shared_ptr<std::pair<Eigen::Vector3d, Eigen::AngleAxisd>> transform_;
 
   InputFilterPtr input_filter_;
   PlaneCalibrationPtr plane_calibration_;
@@ -69,6 +73,7 @@ protected:
   std::shared_ptr<dynamic_reconfigure::Server<PlaneCalibrationConfig>> reconfigure_server_;
 
   std::atomic<bool> debug_;
+  std::atomic<bool> use_manual_ground_transform_;
   std::atomic<double> x_offset_;
   std::atomic<double> y_offset_;
   std::atomic<double> z_offset_;

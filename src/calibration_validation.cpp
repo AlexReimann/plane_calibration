@@ -23,6 +23,16 @@ void CalibrationValidation::updateConfig(const Config& new_config)
 
 bool CalibrationValidation::angleOffsetValid(std::pair<double, double> angles)
 {
+  if (std::isnan(angles.first) || std::isnan(angles.second))
+  {
+    return false;
+  }
+
+  if (std::isinf(angles.first) || std::isinf(angles.second))
+  {
+    return false;
+  }
+
   CalibrationParameters::Parameters parameters = parameters_->getParameters();
   if (angles.first > parameters.max_deviation_ || angles.second > parameters.max_deviation_)
   {

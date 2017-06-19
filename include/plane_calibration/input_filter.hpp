@@ -41,6 +41,7 @@ public:
               const std::shared_ptr<DepthVisualizer>& depth_visualizer, const Config& config);
 
   void updateConfig(const Config& config);
+  void updateBorders();
   void filter(Eigen::MatrixXf& matrix, bool debug = false);
   bool dataIsUsable(const Eigen::MatrixXf& data, bool debug = false);
 

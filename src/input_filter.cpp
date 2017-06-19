@@ -25,6 +25,12 @@ void InputFilter::updateConfig(const Config& config)
   updateBorders_();
 }
 
+void InputFilter::updateBorders()
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  updateBorders_();
+}
+
 void InputFilter::updateBorders_()
 {
   double threshold = config_.threshold_from_ground + config_.max_error;

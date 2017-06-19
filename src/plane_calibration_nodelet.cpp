@@ -20,9 +20,9 @@ PlaneCalibrationNodelet::PlaneCalibrationNodelet() :
     transform_listener_buffer_(), transform_listener_(transform_listener_buffer_)
 {
   debug_ = false;
+  use_manual_ground_transform_ = false;
   ground_plane_rotation_ = Eigen::AngleAxisd::Identity();
-
-  last_valid_calibration_result_ = std::make_pair(0.0, 0.0);
+  resetCalibrationResult();
 }
 
 void PlaneCalibrationNodelet::onInit()
@@ -79,22 +79,14 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
     input_filter_->updateConfig(input_filter_config_);
   }
 
-  Eigen::Vector3d ground_plane_offset;
-  Eigen::AngleAxisd rotation = ground_plane_rotation_;
-  if (config.use_manual_ground_transform)
-  {
-    ground_plane_offset = Eigen::Vector3d(x_offset_, y_offset_, z_offset_);
-    rotation = Eigen::AngleAxisd(px_offset_, Eigen::Vector3d::UnitX())
-        * Eigen::AngleAxisd(py_offset_, Eigen::Vector3d::UnitY())
-        * Eigen::AngleAxisd(pz_offset_, Eigen::Vector3d::UnitZ());
-  }
-
   if (!calibration_parameters_)
   {
     calibration_parameters_ = std::make_shared<CalibrationParameters>();
   }
 
-  calibration_parameters_->update(ground_plane_offset, ecl::degrees_to_radians(config.max_deviation_degrees), rotation);
+  calibration_parameters_->updateDeviations(ecl::degrees_to_radians(config.max_deviation_degrees));
+
+  use_manual_ground_transform_ = config.use_manual_ground_transform;
 
   calibration_validation_config_.max_too_low_ratio = config.plane_max_too_low_ratio;
   calibration_validation_config_.max_mean = config.plane_max_mean;
@@ -175,25 +167,74 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
 
 void PlaneCalibrationNodelet::getTransform()
 {
+  std::pair<Eigen::Vector3d, Eigen::AngleAxisd> transform;
+
+  if (use_manual_ground_transform_)
+  {
+    transform = getTransformManual();
+  }
+  else
+  {
+    try
+    {
+      transform = getTransformTF();
+    }
+    catch (tf2::TransformException &ex)
+    {
+      ROS_WARN("%s", ex.what());
+      return;
+    }
+  }
+
+  bool transform_changed = true;
+  if (transform_)
+  {
+    transform_changed = transform.first != transform_->first
+        || transform.second.matrix() != transform_->second.matrix();
+  }
+
+  if (transform_changed)
+  {
+    ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Sensor transform changed, resetting calibration");
+    resetCalibrationResult();
+    transform_ = std::make_shared<std::pair<Eigen::Vector3d, Eigen::AngleAxisd>>(transform);
+    calibration_parameters_->update(transform_->first, transform_->second);
+    input_filter_->updateBorders();
+  }
+}
+
+std::pair<Eigen::Vector3d, Eigen::AngleAxisd> PlaneCalibrationNodelet::getTransformManual()
+{
+  Eigen::Vector3d offset = Eigen::Vector3d(x_offset_, y_offset_, z_offset_);
+  Eigen::AngleAxisd rotation;
+  rotation = Eigen::AngleAxisd(px_offset_, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(py_offset_, Eigen::Vector3d::UnitY())
+      * Eigen::AngleAxisd(pz_offset_, Eigen::Vector3d::UnitZ());
+
+  return std::make_pair(offset, rotation);
+}
+
+std::pair<Eigen::Vector3d, Eigen::AngleAxisd> PlaneCalibrationNodelet::getTransformTF()
+{
   geometry_msgs::TransformStamped transformStamped;
-  try
-  {
-    transformStamped = transform_listener_buffer_.lookupTransform("base_footprint",
-                                                                  "sensor_3d_short_range_depth_optical_frame",
-                                                                  ros::Time(0));
-  }
-  catch (tf2::TransformException &ex)
-  {
-    ROS_WARN("%s", ex.what());
-    return;
-  }
 
-  if (!transform_)
-  {
-    ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Got transform to ground, will do calibration from now");
-  }
+  transformStamped = transform_listener_buffer_.lookupTransform("base_footprint",
+                                                                "sensor_3d_short_range_depth_optical_frame",
+                                                                ros::Time(0));
 
-  transform_ = std::make_shared<geometry_msgs::TransformStamped>(transformStamped);
+  Eigen::Affine3d eigen_transform;
+  tf::transformMsgToEigen(transformStamped.transform, eigen_transform);
+
+  Eigen::AngleAxisd rotation;
+  rotation = eigen_transform.rotation();
+  return std::make_pair(eigen_transform.translation(), rotation);
+}
+
+void PlaneCalibrationNodelet::resetCalibrationResult()
+{
+  last_valid_calibration_result_plane_ = Eigen::MatrixXf();
+  last_valid_calibration_result_ = std::make_pair(0.0, 0.0);
+  last_valid_calibration_transformation_ = Eigen::Affine3d();
 }
 
 void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)

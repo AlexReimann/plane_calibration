@@ -55,14 +55,15 @@ public:
 
   void update(const Eigen::Vector3d& ground_plane_offset, const double& max_deviation,
               const Eigen::AngleAxisd& rotation);
+  void update(const Eigen::Vector3d& ground_plane_offset, const Eigen::AngleAxisd& rotation);
   void update(const Parameters& parameters);
 
   void update(const Eigen::Vector3d& ground_plane_offset);
   void update(const Eigen::AngleAxisd& rotation);
-  void update(const double& max_deviation);
+  void update(const double& deviation);
+  void updateDeviations(const double& value);
 
   void updateDeviation(const double& deviation);
-
 
 protected:
   mutable std::mutex mutex_;

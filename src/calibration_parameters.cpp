@@ -62,10 +62,25 @@ void CalibrationParameters::update(const Eigen::Vector3d& ground_plane_offset, c
   updated_ = true;
 }
 
+void CalibrationParameters::update(const Eigen::Vector3d& ground_plane_offset, const Eigen::AngleAxisd& rotation)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  parameters_.ground_plane_offset_ = ground_plane_offset;
+  parameters_.rotation_ = rotation;
+  updated_ = true;
+}
+
 void CalibrationParameters::update(const Parameters& parameters)
 {
   std::lock_guard<std::mutex> lock(mutex_);
   parameters_ = parameters;
+  updated_ = true;
+}
+
+void CalibrationParameters::update(const double& deviation)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  parameters_.deviation_ = deviation;
   updated_ = true;
 }
 
@@ -83,10 +98,11 @@ void CalibrationParameters::update(const Eigen::AngleAxisd& rotation)
   updated_ = true;
 }
 
-void CalibrationParameters::update(const double& max_deviation)
+void CalibrationParameters::updateDeviations(const double& value)
 {
   std::lock_guard<std::mutex> lock(mutex_);
-  parameters_.max_deviation_ = max_deviation;
+  parameters_.max_deviation_ = value;
+  parameters_.deviation_ = value;
   updated_ = true;
 }
 
