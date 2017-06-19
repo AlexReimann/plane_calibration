@@ -7,6 +7,7 @@
 
 #include "camera_model.hpp"
 #include "calibration_parameters.hpp"
+#include "depth_visualizer.hpp"
 
 namespace plane_calibration
 {
@@ -30,7 +31,7 @@ public:
   };
 
   CalibrationValidation(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
-                        const Config& config);
+                        const Config& config, const std::shared_ptr<DepthVisualizer>& depth_visualizer);
 
   void updateConfig(const Config& new_config);
 
@@ -42,6 +43,7 @@ protected:
   CameraModel camera_model_;
   CalibrationParametersPtr parameters_;
   Config config_;
+  std::shared_ptr<DepthVisualizer> depth_visualizer_;
 
   Eigen::MatrixXf last_ground_plane_;
 };

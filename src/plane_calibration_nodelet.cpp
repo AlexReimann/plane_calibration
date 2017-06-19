@@ -144,7 +144,8 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   if (!calibration_validation_)
   {
     calibration_validation_ = std::make_shared<CalibrationValidation>(*camera_model_, calibration_parameters_,
-                                                                      calibration_validation_config_);
+                                                                      calibration_validation_config_,
+                                                                      depth_visualizer_);
   }
 
   if (!plane_to_depth_converter_)

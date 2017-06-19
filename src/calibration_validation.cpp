@@ -6,11 +6,13 @@ namespace plane_calibration
 {
 
 CalibrationValidation::CalibrationValidation(const CameraModel& camera_model,
-                                             const CalibrationParametersPtr& parameters, const Config& config) :
+                                             const CalibrationParametersPtr& parameters, const Config& config,
+                                             const std::shared_ptr<DepthVisualizer>& depth_visualizer) :
     camera_model_(camera_model)
 {
   parameters_ = parameters;
   config_ = config;
+  depth_visualizer_ = depth_visualizer;
 }
 
 void CalibrationValidation::updateConfig(const Config& new_config)
@@ -45,6 +47,17 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
   int is_too_low = (difference.array() < 0.0).count();
   double too_low_ratio = is_too_low / (double)not_nan_count;
 
+  double mean = difference.sum() / not_nan_count;
+  //taking abs values above
+  double max_deviation = difference.maxCoeff();
+
+  if (debug)
+  {
+    depth_visualizer_->publishDouble("debug/result_too_low_ratio", too_low_ratio);
+    depth_visualizer_->publishDouble("debug/result_mean", mean);
+    depth_visualizer_->publishDouble("debug/result_max_deviation", max_deviation);
+  }
+
   if (too_low_ratio > config_.max_too_low_ratio)
   {
     if (debug)
@@ -55,7 +68,6 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
     return false;
   }
 
-  double mean = difference.sum() / not_nan_count;
   if (std::abs(mean) > config_.max_mean)
   {
     if (debug)
@@ -66,8 +78,6 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
     return false;
   }
 
-  //taking abs values above
-  double max_deviation = difference.maxCoeff();
   if (max_deviation > config_.max_deviation)
   {
     if (debug)
