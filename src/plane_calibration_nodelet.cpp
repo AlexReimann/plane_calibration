@@ -38,8 +38,6 @@ void PlaneCalibrationNodelet::onInit()
   ros::NodeHandle node_handle = this->getPrivateNodeHandle();
   depth_visualizer_ = std::make_shared<DepthVisualizer>(node_handle);
 
-  pub_candidate_points_ = node_handle.advertise<sensor_msgs::Image>("candidates", 1);
-  pub_plane_points_ = node_handle.advertise<sensor_msgs::Image>("plane_points", 1);
   pub_transform_ = node_handle.advertise<tf2_msgs::TFMessage>("adjusted_tf", 1);
 
   sub_camera_info_ = node_handle.subscribe<sensor_msgs::CameraInfo>("camera_info", 1,

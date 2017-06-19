@@ -77,8 +77,6 @@ protected:
   std::atomic<double> py_offset_;
   std::atomic<double> pz_offset_;
 
-  ros::Publisher pub_candidate_points_;
-  ros::Publisher pub_plane_points_;
   ros::Publisher pub_transform_;
   ros::Subscriber sub_camera_info_;
   ros::Subscriber sub_depth_image_;
