@@ -284,7 +284,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
   {
     bool parameters_updated = calibration_parameters_->parametersUpdated();
     bool last_calibration_is_still_good = calibration_validation_->groundPlaneFitsData(
-        last_valid_calibration_result_plane_, depth_matrix);
+        last_valid_calibration_result_plane_, depth_matrix, debug_);
     if (!parameters_updated && last_calibration_is_still_good)
     {
       if (debug_)
