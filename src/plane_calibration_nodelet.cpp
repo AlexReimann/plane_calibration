@@ -179,7 +179,8 @@ void PlaneCalibrationNodelet::getTransform()
   geometry_msgs::TransformStamped transformStamped;
   try
   {
-    transformStamped = transform_listener_buffer_.lookupTransform("base_footprint", "sensor_3d_short_range_depth_optical_frame",
+    transformStamped = transform_listener_buffer_.lookupTransform("base_footprint",
+                                                                  "sensor_3d_short_range_depth_optical_frame",
                                                                   ros::Time(0));
   }
   catch (tf2::TransformException &ex)
@@ -250,7 +251,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
   if (debug_)
   {
     ROS_INFO_STREAM(
-        "[PlaneCalibrationNodelet]: Calibration result angles: " << calibration_result.first << ", " << calibration_result.second);
+        "[PlaneCalibrationNodelet]: Calibration result angles [degree]: " << ecl::radians_to_degrees(calibration_result.first) << ", " << calibration_result.second);
 
     Eigen::AngleAxisd rotation;
     rotation = parameters.rotation_ * Eigen::AngleAxisd(calibration_result.first, Eigen::Vector3d::UnitX())
@@ -273,9 +274,9 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
     if (debug_)
     {
       ROS_WARN_STREAM(
-          "[PlaneCalibrationNodelet]: Calibration turned out bad, too big angles ( > " << parameters.max_deviation_ << "):");
+          "[PlaneCalibrationNodelet]: Calibration turned out bad, too big angles ( > " << ecl::radians_to_degrees(parameters.max_deviation_) << " [degree]):");
       ROS_WARN_STREAM(
-          "[PlaneCalibrationNodelet]: x angle: " << calibration_result.first << ", y angle: " << calibration_result.second);
+          "[PlaneCalibrationNodelet]: x,y angles [degree]: " << ecl::radians_to_degrees(calibration_result.first) << ", " << ecl::radians_to_degrees(calibration_result.second));
     }
     //keep old / last one
     return;
@@ -300,9 +301,11 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
   }
 
   std::stringstream angle_change_string;
-  angle_change_string << "px: " << last_valid_calibration_result_.first << " -> " << calibration_result.first;
+  angle_change_string << "px [degree]: " << ecl::radians_to_degrees(last_valid_calibration_result_.first) << " -> "
+      << ecl::radians_to_degrees(calibration_result.first);
   angle_change_string << ", ";
-  angle_change_string << "py: " << last_valid_calibration_result_.second << " -> " << calibration_result.second;
+  angle_change_string << "py [degree]: " << ecl::radians_to_degrees(last_valid_calibration_result_.second) << " -> "
+      << ecl::radians_to_degrees(calibration_result.second);
 
   ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Updated the calibration angles: " << angle_change_string.str());
 
