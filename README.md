@@ -16,6 +16,8 @@ Pre-calculate multipliers ``m_px`` and ``m_py`` for estimating the angles later:
 1. Calculate the *sum of differences* ``d_px``, ``d_py`` between ± x and ± y plane images
 1. Calculate the multipliers with ``m_px = e_max / d_px``, ``m_py = e_max / d_py``
 
+![multiplier calculation](https://raw.githubusercontent.com/AlexReimann/plane_calibration/devel/doc/plane_calibration_pre.png)
+
 Estimate the angles:
 1. Start with ``e = e_max``
 2. Calculate the plane images as in the pre-calculation above for ``e``
@@ -27,6 +29,8 @@ Estimate the angles:
 6. Use the ``offsets + some_buffer`` as estimated deviation ``e`` and repeat from _2._ ``n`` times
 7. Sum up the offsets to get the plane xy orientation offsets
 8. Calculate camera transformation to negate the calculated ground plane angle offsets
+
+![difference calculation](https://raw.githubusercontent.com/AlexReimann/plane_calibration/devel/doc/plane_calibration.png)
 
 Lazy / conservative update scheme:
 1. Always check if input has"enough" data "at the right place" to fit a plane
