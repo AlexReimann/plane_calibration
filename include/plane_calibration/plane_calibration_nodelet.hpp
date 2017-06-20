@@ -9,6 +9,7 @@
 #include <nodelet/nodelet.h>
 #include <dynamic_reconfigure/server.h>
 #include <plane_calibration/PlaneCalibrationConfig.h>
+#include <ros/time.h>
 #include <ros/subscriber.h>
 #include <ros/publisher.h>
 #include <sensor_msgs/Image.h>
@@ -45,8 +46,11 @@ protected:
   virtual void runCalibration(Eigen::MatrixXf depth_matrix);
   virtual void publishTransform();
 
+  ros::Time last_call_time_;
+  double rate_;
   CameraModelPtr camera_model_;
   CalibrationParametersPtr calibration_parameters_;
+
   tf2_ros::Buffer transform_listener_buffer_;
   tf2_ros::TransformListener transform_listener_;
   std::shared_ptr<std::pair<Eigen::Vector3d, Eigen::AngleAxisd>> transform_;
