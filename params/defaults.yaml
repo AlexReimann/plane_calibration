@@ -1,4 +1,4 @@
-rate:                      1.0
-ground_frame:              base_footprint
+rate:                       1.0
+ground_frame:               base_footprint
 camera_depth_frame:         camera_depth_optical_frame
-result_camera_depth_frame:  ground_plane_frame
+result_camera_depth_frame:  camera_depth_optical_frame_adjusted

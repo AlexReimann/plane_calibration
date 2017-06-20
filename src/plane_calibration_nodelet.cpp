@@ -382,13 +382,30 @@ void PlaneCalibrationNodelet::publishTransform()
 
   transformStamped.header.stamp = ros::Time::now();
   transformStamped.header.frame_id = camera_depth_frame_;
-
   transformStamped.child_frame_id = result_frame_;
-  tf::transformEigenToMsg(last_valid_calibration_transformation_, transformStamped.transform);
+
+  if (transform_)
+  {
+    Eigen::Affine3d inverse_transform = (Eigen::Translation3d(transform_->first) * transform_->second).inverse();
+
+    Eigen::Affine3d camera_from_detected_ground = last_valid_calibration_transformation_ * inverse_transform;
+    tf::transformEigenToMsg(camera_from_detected_ground.inverse(), transformStamped.transform);
+  }
+  else
+  {
+    //publish same if no transform available yet
+    Eigen::Affine3d no_transform = Eigen::Translation3d(0.0, 0.0, 0.0) * Eigen::AngleAxisd::Identity();
+    tf::transformEigenToMsg(no_transform, transformStamped.transform);
+  }
+
   transform_broadcaster.sendTransform(transformStamped);
 
   if (debug_)
   {
+    transformStamped.child_frame_id = "detected_ground";
+    tf::transformEigenToMsg(last_valid_calibration_transformation_, transformStamped.transform);
+    transform_broadcaster.sendTransform(transformStamped);
+
     depth_visualizer_->publishCloud("debug/calibrated_plane", last_valid_calibration_transformation_,
                                     camera_model_->getParameters());
   }
