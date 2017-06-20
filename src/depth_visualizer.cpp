@@ -22,7 +22,7 @@ void DepthVisualizer::setCameraModel(const image_geometry::PinholeCameraModel& c
   camera_model_ = camera_model;
 }
 
-void DepthVisualizer::publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix)
+void DepthVisualizer::publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id)
 {
   addPublisherIfNotExist<sensor_msgs::Image>(topic);
 
@@ -32,7 +32,7 @@ void DepthVisualizer::publishImage(const std::string& topic, const Eigen::Matrix
   }
 
   sensor_msgs::Image image_msg;
-  image_msg.header.frame_id = frame_id_;
+  image_msg.header.frame_id = frame_id != "" ? frame_id : frame_id_;
   ImageMsgEigenConverter::convert(image_matrix, image_msg);
   publishImage(topic, image_msg);
 }
@@ -48,7 +48,7 @@ void DepthVisualizer::publishImage(const std::string& topic, const sensor_msgs::
 }
 
 void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::Affine3d& plane_transformation,
-                                   const CameraModel::Parameters& camera_model_paramaters)
+                                   const CameraModel::Parameters& camera_model_paramaters, std::string frame_id)
 {
   addPublisherIfNotExist<sensor_msgs::PointCloud2>(topic);
 
@@ -60,12 +60,12 @@ void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::Affine
   Eigen::MatrixXf plane = PlaneToDepthImage::convert(plane_transformation, camera_model_paramaters);
 
   sensor_msgs::Image image_msg;
-  image_msg.header.frame_id = frame_id_;
+  image_msg.header.frame_id = frame_id != "" ? frame_id : frame_id_;
   ImageMsgEigenConverter::convert(plane, image_msg);
   publishCloud(topic, image_msg);
 }
 
-void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix)
+void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id)
 {
   addPublisherIfNotExist<sensor_msgs::PointCloud2>(topic);
 
@@ -75,7 +75,7 @@ void DepthVisualizer::publishCloud(const std::string& topic, const Eigen::Matrix
   }
 
   sensor_msgs::Image image_msg;
-  image_msg.header.frame_id = frame_id_;
+  image_msg.header.frame_id = frame_id != "" ? frame_id : frame_id_;
   ImageMsgEigenConverter::convert(image_matrix, image_msg);
   publishCloud(topic, image_msg);
 }

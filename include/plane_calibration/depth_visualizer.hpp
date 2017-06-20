@@ -24,11 +24,11 @@ public:
 
   void setCameraModel(const image_geometry::PinholeCameraModel& camera_model);
 
-  void publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix);
+  void publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id = std::string(""));
   void publishImage(const std::string& topic, const sensor_msgs::Image& image_msg);
   void publishCloud(const std::string& topic, const Eigen::Affine3d& plane_transformation,
-                    const CameraModel::Parameters& camera_model_paramaters);
-  void publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix);
+                    const CameraModel::Parameters& camera_model_paramaters, std::string frame_id = std::string(""));
+  void publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id = std::string(""));
   void publishCloud(const std::string& topic, const sensor_msgs::Image& image_msg);
 
   void publishDouble(const std::string& topic, const double& value);
