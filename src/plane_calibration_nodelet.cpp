@@ -36,14 +36,13 @@ PlaneCalibrationNodelet::PlaneCalibrationNodelet() :
 void PlaneCalibrationNodelet::onInit()
 {
   ROS_INFO("[PlaneCalibrationNodelet]: Initializing");
+  ros::NodeHandle node_handle = this->getPrivateNodeHandle();
 
   reconfigure_server_ = std::shared_ptr<dynamic_reconfigure::Server<PlaneCalibrationConfig> >(
-      new dynamic_reconfigure::Server<PlaneCalibrationConfig>());
+      new dynamic_reconfigure::Server<PlaneCalibrationConfig>(node_handle));
   dynamic_reconfigure::Server<PlaneCalibrationConfig>::CallbackType reconfigure_cb = boost::bind(
       &PlaneCalibrationNodelet::reconfigureCB, this, _1, _2);
   reconfigure_server_->setCallback(reconfigure_cb);
-
-  ros::NodeHandle node_handle = this->getPrivateNodeHandle();
 
   node_handle.param("calibration_rate", calibration_rate_, 1.0);
   node_handle.param("ground_frame", ground_frame_, std::string("base_footprint"));
