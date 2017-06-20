@@ -19,7 +19,7 @@ namespace plane_calibration
 PlaneCalibrationNodelet::PlaneCalibrationNodelet() :
     transform_listener_buffer_(), transform_listener_(transform_listener_buffer_)
 {
-  rate_ = 1.0;
+  calibration_rate_ = 1.0;
   debug_ = false;
   use_manual_ground_transform_ = false;
   ground_plane_rotation_ = Eigen::AngleAxisd::Identity();
@@ -45,7 +45,7 @@ void PlaneCalibrationNodelet::onInit()
 
   ros::NodeHandle node_handle = this->getPrivateNodeHandle();
 
-  node_handle.param("rate", rate_, 1.0);
+  node_handle.param("calibration_rate", calibration_rate_, 1.0);
   node_handle.param("ground_frame", ground_frame_, std::string("base_footprint"));
   node_handle.param("camera_depth_frame", camera_depth_frame_, std::string("camera_depth_optical_frame"));
   node_handle.param("result_camera_depth_frame", result_frame_, std::string("ground_plane_frame"));
@@ -130,7 +130,7 @@ void PlaneCalibrationNodelet::cameraInfoCB(const sensor_msgs::CameraInfoConstPtr
 void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& depth_image_msg)
 {
   ros::Time call_time = ros::Time::now();
-  if (ros::Time::now() < last_call_time_ + ros::Duration(1.0 / rate_))
+  if (ros::Time::now() < last_call_time_ + ros::Duration(1.0 / calibration_rate_))
   {
     publishTransform();
     return;

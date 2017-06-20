@@ -47,7 +47,7 @@ protected:
   virtual void publishTransform();
 
   ros::Time last_call_time_;
-  double rate_;
+  double calibration_rate_;
   CameraModelPtr camera_model_;
   CalibrationParametersPtr calibration_parameters_;
 
