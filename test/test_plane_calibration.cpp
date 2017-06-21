@@ -4,7 +4,7 @@
 #include <ecl/geometry/angle.hpp>
 #include "plane_calibration/plane_to_depth_image.hpp"
 #include "plane_calibration/plane_calibration.hpp"
-#include "plane_calibration/magic_multiplier_estimation.hpp"
+#include "plane_calibration/calibration_parameters.hpp"
 
 using namespace plane_calibration;
 
@@ -39,21 +39,13 @@ TEST(PlaneCalibration, one_shot)
   Eigen::MatrixXf noise = Eigen::MatrixXf::Random(plane.rows(), plane.cols());
   Eigen::MatrixXf random_plane_image = plane + 0.02 * noise;
 
-  PlaneCalibration::Parameters parameters(ground_plane_offset, max_deviation, start_rotation);
+  CalibrationParametersPtr parameters = std::make_shared<CalibrationParameters>();
+  parameters->update(ground_plane_offset, max_deviation, start_rotation);
 
-  PlaneCalibrationPtr plane_calibration = std::make_shared<PlaneCalibration>();
-  plane_calibration->updateParameters(camera_model);
-  plane_calibration->updateParameters(parameters);
-  plane_calibration->updateMaxDeviationPlanesIfNeeded();
+  std::shared_ptr<DepthVisualizer> dummy_visualizer;
+  PlaneCalibrationPtr plane_calibration = std::make_shared<PlaneCalibration>(camera_model, parameters, dummy_visualizer);
 
-  MagicMultiplierEstimation magic_estimator(camera_model, plane_calibration, max_deviation, max_deviation);
-
-  bool calculate_errors = false;
-  MagicMultiplierEstimation::Result magic_result = magic_estimator.estimate(calculate_errors);
-
-  std::pair<double, double> one_shot_result = plane_calibration->estimateAngles(random_plane_image,
-                                                                               magic_result.multiplier_x,
-                                                                               magic_result.multiplier_y);
+  std::pair<double, double> one_shot_result = plane_calibration->calibrate(random_plane_image, 3);
 
   double estimated_px = one_shot_result.first;
   double estimated_py = one_shot_result.second;
