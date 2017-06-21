@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   nodelet
   dynamic_reconfigure
   sensor_msgs
+  geometry_msgs
   tf2
   tf2_msgs
   image_geometry
@@ -35,6 +36,7 @@ catkin_package(
         nodelet
         dynamic_reconfigure
         sensor_msgs
+        geometry_msgs
         tf2
         tf2_msgs
         image_geometry

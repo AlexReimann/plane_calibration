@@ -10,6 +10,7 @@
 #include <image_geometry/pinhole_camera_model.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <geometry_msgs/Pose2D.h>
 
 #include "plane_calibration/image_msg_eigen_converter.hpp"
 
@@ -50,6 +51,8 @@ void PlaneCalibrationNodelet::onInit()
   node_handle.param("result_camera_depth_frame", result_frame_, std::string("ground_plane_frame"));
 
   depth_visualizer_ = std::make_shared<DepthVisualizer>(node_handle, camera_depth_frame_);
+
+  pub_update_ = node_handle.advertise<geometry_msgs::Pose2D>("plane_angle_update_degrees", 1);
 
   sub_camera_info_ = node_handle.subscribe<sensor_msgs::CameraInfo>("camera_info", 1,
                                                                     &PlaneCalibrationNodelet::cameraInfoCB, this);
@@ -366,6 +369,12 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
   angle_change_string << ", ";
   angle_change_string << "py [degree]: " << ecl::radians_to_degrees(last_valid_calibration_result_.second) << " -> "
       << ecl::radians_to_degrees(calibration_result.second);
+
+  geometry_msgs::Pose2D update_msg;
+  update_msg.x = ecl::radians_to_degrees(last_valid_calibration_result_.first);
+  update_msg.y = ecl::radians_to_degrees(last_valid_calibration_result_.first);
+  update_msg.theta = 0.0;
+  pub_update_.publish(update_msg);
 
   ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Updated the calibration angles: " << angle_change_string.str());
 

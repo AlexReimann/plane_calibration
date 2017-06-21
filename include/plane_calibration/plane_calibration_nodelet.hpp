@@ -89,6 +89,7 @@ protected:
   std::string camera_depth_frame_;
   std::string result_frame_;
 
+  ros::Publisher pub_update_;
   ros::Subscriber sub_camera_info_;
   ros::Subscriber sub_depth_image_;
 };
