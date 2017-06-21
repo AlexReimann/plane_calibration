@@ -12,7 +12,7 @@ namespace plane_calibration
 {
 
 PlaneCalibration::PlaneCalibration(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
-                                   const std::shared_ptr<DepthVisualizer>& depth_visualizer) :
+                                   const VisualizerInterfacePtr& depth_visualizer) :
     plane_to_depth_(camera_model.getParameters())
 {
   camera_model_.update(camera_model.getParameters());
@@ -24,7 +24,7 @@ PlaneCalibration::PlaneCalibration(const CameraModel& camera_model, const Calibr
   depth_visualizer_ = depth_visualizer;
 }
 
-std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& filtered_depth_matrix, int iterations)
+std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& filtered_depth_matrix, const int& iterations)
 {
   std::lock_guard<std::mutex> lock(mutex_);
 

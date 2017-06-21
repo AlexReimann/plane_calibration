@@ -13,25 +13,29 @@
 #include <image_geometry/pinhole_camera_model.h>
 
 #include "camera_model.hpp"
+#include "visualizer_interface.hpp"
 
 namespace plane_calibration
 {
 
-class DepthVisualizer
+class DepthVisualizer : public VisualizerInterface
 {
 public:
   DepthVisualizer(ros::NodeHandle node_handle, std::string frame_id = std::string("camera_depth_optical_frame"));
 
-  void setCameraModel(const image_geometry::PinholeCameraModel& camera_model);
+  virtual void setCameraModel(const image_geometry::PinholeCameraModel& camera_model);
 
-  void publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id = std::string(""));
-  void publishImage(const std::string& topic, const sensor_msgs::Image& image_msg);
-  void publishCloud(const std::string& topic, const Eigen::Affine3d& plane_transformation,
-                    const CameraModel::Parameters& camera_model_paramaters, std::string frame_id = std::string(""));
-  void publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id = std::string(""));
-  void publishCloud(const std::string& topic, const sensor_msgs::Image& image_msg);
+  virtual void publishImage(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id =
+                                std::string(""));
+  virtual void publishImage(const std::string& topic, const sensor_msgs::Image& image_msg);
+  virtual void publishCloud(const std::string& topic, const Eigen::Affine3d& plane_transformation,
+                            const CameraModel::Parameters& camera_model_paramaters,
+                            std::string frame_id = std::string(""));
+  virtual void publishCloud(const std::string& topic, const Eigen::MatrixXf& image_matrix, std::string frame_id =
+                                std::string(""));
+  virtual void publishCloud(const std::string& topic, const sensor_msgs::Image& image_msg);
 
-  void publishDouble(const std::string& topic, const double& value);
+  virtual void publishDouble(const std::string& topic, const double& value);
 
   static sensor_msgs::PointCloud2Ptr floatImageMsgToPointCloud(const sensor_msgs::Image& image_msg,
                                                                const image_geometry::PinholeCameraModel& camera_model);

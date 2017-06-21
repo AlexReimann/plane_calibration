@@ -7,7 +7,7 @@
 
 #include "camera_model.hpp"
 #include "calibration_parameters.hpp"
-#include "depth_visualizer.hpp"
+#include "visualizer_interface.hpp"
 
 namespace plane_calibration
 {
@@ -33,19 +33,19 @@ public:
   };
 
   CalibrationValidation(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
-                        const Config& config, const std::shared_ptr<DepthVisualizer>& depth_visualizer);
+                        const Config& config, const VisualizerInterfacePtr& depth_visualizer);
 
   void updateConfig(const Config& new_config);
 
-  bool angleOffsetValid(std::pair<double, double> angles);
-  bool groundPlaneFitsData(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data, bool debug = false);
+  bool angleOffsetValid(const std::pair<double, double>& angles);
+  bool groundPlaneFitsData(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data, const bool& debug = false);
 
 protected:
   mutable std::mutex mutex_;
   CameraModel camera_model_;
   CalibrationParametersPtr parameters_;
   Config config_;
-  std::shared_ptr<DepthVisualizer> depth_visualizer_;
+  VisualizerInterfacePtr depth_visualizer_;
 
   Eigen::MatrixXf last_ground_plane_;
 };

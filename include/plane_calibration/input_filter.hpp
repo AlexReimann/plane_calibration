@@ -7,7 +7,7 @@
 
 #include "camera_model.hpp"
 #include "calibration_parameters.hpp"
-#include "depth_visualizer.hpp"
+#include "visualizer_interface.hpp"
 
 namespace plane_calibration
 {
@@ -38,7 +38,7 @@ public:
 
   //TODO automatic threshold from max_deviation
   InputFilter(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
-              const std::shared_ptr<DepthVisualizer>& depth_visualizer, const Config& config);
+              const VisualizerInterfacePtr& depth_visualizer, const Config& config);
 
   void updateConfig(const Config& config);
   void updateBorders();
@@ -56,7 +56,7 @@ protected:
   Eigen::MatrixXf min_plane_;
   Eigen::MatrixXf max_plane_;
 
-  std::shared_ptr<DepthVisualizer> depth_visualizer_;
+  VisualizerInterfacePtr depth_visualizer_;
 };
 typedef std::shared_ptr<InputFilter> InputFilterPtr;
 
