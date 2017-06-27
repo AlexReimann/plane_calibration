@@ -7,7 +7,7 @@ namespace plane_calibration
 {
 
 InputFilter::InputFilter(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
-                         const std::shared_ptr<DepthVisualizer>& depth_visualizer, const Config& config) :
+                         const VisualizerInterfacePtr& depth_visualizer, const Config& config) :
     camera_model_(camera_model)
 {
   parameters_ = parameters;

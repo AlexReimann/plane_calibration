@@ -7,7 +7,7 @@
 
 #include "calibration_parameters.hpp"
 #include "plane_to_depth_image.hpp"
-#include "depth_visualizer.hpp"
+#include "visualizer_interface.hpp"
 
 namespace plane_calibration
 {
@@ -15,14 +15,14 @@ namespace plane_calibration
 class DeviationPlanes
 {
 public:
-  DeviationPlanes(PlaneToDepthImage plane_to_depth, std::shared_ptr<DepthVisualizer> depth_visualizer);
+  DeviationPlanes(const PlaneToDepthImage& plane_to_depth, const VisualizerInterfacePtr& depth_visualizer);
 
-  void init(CalibrationParameters::Parameters parameters);
-  void update(CalibrationParameters::Parameters parameters, bool use_max_deviation = false);
+  void init(const CalibrationParameters::Parameters& parameters);
+  void update(const CalibrationParameters::Parameters& parameters, const bool& use_max_deviation = false);
 
-  std::pair<double, double> estimateAngles(const Eigen::MatrixXf& plane, bool debug = false);
-  std::pair<double, double> getDistanceDiffs(const Eigen::MatrixXf& plane, bool debug = false);
-  static double getDistance(const Eigen::MatrixXf& from, const Eigen::MatrixXf& to, bool remove_nans);
+  std::pair<double, double> estimateAngles(const Eigen::MatrixXf& plane, const bool& debug = false);
+  std::pair<double, double> getDistanceDiffs(const Eigen::MatrixXf& plane, const bool& debug = false);
+  static double getDistance(const Eigen::MatrixXf& from, const Eigen::MatrixXf& to, const bool& remove_nans);
 
   double getDeviation();
   std::pair<double, double> getMultipliers();
@@ -47,7 +47,7 @@ protected:
   int indexYPositive();
   int indexYNegative();
 
-  std::shared_ptr<DepthVisualizer> depth_visualizer_;
+  VisualizerInterfacePtr depth_visualizer_;
   PlaneToDepthImage plane_to_depth_;
   double deviation_;
 

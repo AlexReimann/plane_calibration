@@ -10,7 +10,7 @@
 #include "camera_model.hpp"
 #include "calibration_parameters.hpp"
 #include "deviation_planes.hpp"
-#include "depth_visualizer.hpp"
+#include "visualizer_interface.hpp"
 
 namespace plane_calibration
 {
@@ -19,13 +19,13 @@ class PlaneCalibration
 {
 public:
   PlaneCalibration(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
-                   const std::shared_ptr<DepthVisualizer>& depth_visualizer);
+                   const VisualizerInterfacePtr& depth_visualizer);
 
   virtual ~PlaneCalibration()
   {
   }
 
-  std::pair<double, double> calibrate(const Eigen::MatrixXf& filtered_depth_matrix, int iterations = 3);
+  std::pair<double, double> calibrate(const Eigen::MatrixXf& filtered_depth_matrix, const int& iterations = 3);
 
 protected:
 
@@ -39,7 +39,7 @@ protected:
   DeviationPlanesPtr temp_deviation_planes_;
   Eigen::MatrixXf temp_estimated_plane_;
 
-  std::shared_ptr<DepthVisualizer> depth_visualizer_;
+  VisualizerInterfacePtr depth_visualizer_;
 };
 typedef std::shared_ptr<PlaneCalibration> PlaneCalibrationPtr;
 

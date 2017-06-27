@@ -5,6 +5,7 @@
 #include "plane_calibration/plane_to_depth_image.hpp"
 #include "plane_calibration/plane_calibration.hpp"
 #include "plane_calibration/calibration_parameters.hpp"
+#include "plane_calibration/visualizer_interface.hpp"
 
 using namespace plane_calibration;
 
@@ -42,7 +43,7 @@ TEST(PlaneCalibration, one_shot)
   CalibrationParametersPtr parameters = std::make_shared<CalibrationParameters>();
   parameters->update(ground_plane_offset, max_deviation, start_rotation);
 
-  std::shared_ptr<DepthVisualizer> dummy_visualizer;
+  VisualizerInterfacePtr dummy_visualizer;
   PlaneCalibrationPtr plane_calibration = std::make_shared<PlaneCalibration>(camera_model, parameters, dummy_visualizer);
 
   std::pair<double, double> one_shot_result = plane_calibration->calibrate(random_plane_image, 3);

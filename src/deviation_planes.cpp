@@ -5,7 +5,7 @@
 
 namespace plane_calibration
 {
-DeviationPlanes::DeviationPlanes(PlaneToDepthImage plane_to_depth, std::shared_ptr<DepthVisualizer> depth_visualizer) :
+DeviationPlanes::DeviationPlanes(const PlaneToDepthImage& plane_to_depth, const VisualizerInterfacePtr& depth_visualizer) :
     plane_to_depth_(plane_to_depth)
 {
   planes_.resize(4);
@@ -14,13 +14,13 @@ DeviationPlanes::DeviationPlanes(PlaneToDepthImage plane_to_depth, std::shared_p
   depth_visualizer_ = depth_visualizer;
 }
 
-void DeviationPlanes::init(CalibrationParameters::Parameters parameters)
+void DeviationPlanes::init(const CalibrationParameters::Parameters& parameters)
 {
   bool use_max_deviation = true;
   update(parameters, use_max_deviation);
 }
 
-void DeviationPlanes::update(CalibrationParameters::Parameters parameters, bool use_max_deviation)
+void DeviationPlanes::update(const CalibrationParameters::Parameters& parameters, const bool& use_max_deviation)
 {
   deviation_ = use_max_deviation ? parameters.max_deviation_ : parameters.deviation_;
 
@@ -52,7 +52,7 @@ void DeviationPlanes::update(CalibrationParameters::Parameters parameters, bool 
   magic_multipliers_ = std::make_pair(x_magic_multiplier, y_magic_multiplier);
 }
 
-std::pair<double, double> DeviationPlanes::estimateAngles(const Eigen::MatrixXf& plane, bool debug)
+std::pair<double, double> DeviationPlanes::estimateAngles(const Eigen::MatrixXf& plane, const bool& debug)
 {
   std::pair<double, double> distance_diffs = getDistanceDiffs(plane, debug);
 
@@ -77,7 +77,7 @@ std::pair<double, double> DeviationPlanes::estimateAngles(const Eigen::MatrixXf&
   return std::make_pair(px_estimation, py_estimation);
 }
 
-std::pair<double, double> DeviationPlanes::getDistanceDiffs(const Eigen::MatrixXf& plane, bool debug)
+std::pair<double, double> DeviationPlanes::getDistanceDiffs(const Eigen::MatrixXf& plane, const bool& debug)
 {
   std::vector<double> distances = getDistances(planes_, plane);
 
@@ -111,7 +111,7 @@ std::vector<double> DeviationPlanes::getDistances(const std::vector<Eigen::Matri
   return distances;
 }
 
-double DeviationPlanes::getDistance(const Eigen::MatrixXf& from, const Eigen::MatrixXf& to, bool remove_nans)
+double DeviationPlanes::getDistance(const Eigen::MatrixXf& from, const Eigen::MatrixXf& to, const bool& remove_nans)
 {
   Eigen::MatrixXf difference = (to - from).cwiseAbs2();
 

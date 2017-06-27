@@ -7,7 +7,7 @@ namespace plane_calibration
 
 CalibrationValidation::CalibrationValidation(const CameraModel& camera_model,
                                              const CalibrationParametersPtr& parameters, const Config& config,
-                                             const std::shared_ptr<DepthVisualizer>& depth_visualizer) :
+                                             const VisualizerInterfacePtr& depth_visualizer) :
     camera_model_(camera_model)
 {
   parameters_ = parameters;
@@ -21,7 +21,7 @@ void CalibrationValidation::updateConfig(const Config& new_config)
   config_ = new_config;
 }
 
-bool CalibrationValidation::angleOffsetValid(std::pair<double, double> angles)
+bool CalibrationValidation::angleOffsetValid(const std::pair<double, double>& angles)
 {
   if (std::isnan(angles.first) || std::isnan(angles.second))
   {
@@ -42,7 +42,7 @@ bool CalibrationValidation::angleOffsetValid(std::pair<double, double> angles)
 }
 
 bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data,
-                                                bool debug)
+                                                const bool& debug)
 {
   std::lock_guard<std::mutex> lock(mutex_);
   Eigen::MatrixXf difference = (ground_plane - data);
