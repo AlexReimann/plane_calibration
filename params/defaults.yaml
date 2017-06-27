@@ -1,2 +1,4 @@
 calibration_rate:           1.0
 ground_frame:               base_footprint
+precompute_planes:         true
+precomputed_plane_pairs_count:  20
