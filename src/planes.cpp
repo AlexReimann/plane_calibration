@@ -6,11 +6,10 @@
 namespace plane_calibration
 {
 
-Planes::Planes(const int& count, const CalibrationParameters::Parameters& parameters,
-               const PlaneToDepthImage& plane_to_depth) :
+Planes::Planes(const CalibrationParameters::Parameters& parameters, const PlaneToDepthImage& plane_to_depth) :
     plane_to_depth_(plane_to_depth)
 {
-  pair_count_ = count;
+  pair_count_ = parameters.precomputed_plane_pairs_count_;
   max_deviation_ = parameters.max_deviation_;
 
   translation_ = Eigen::Translation3d(parameters.ground_plane_offset_);

@@ -41,8 +41,6 @@ protected:
   PlaneToDepthImage plane_to_depth_;
   DeviationPlanesPtr max_deviation_planes_;
 
-  bool precompute_planes_;
-  int precomputed_plane_pairs_count_;
   PlanesPtr precomputed_planes_;
 
   std::vector<DeviationPlanesPtr> deviation_planes_;

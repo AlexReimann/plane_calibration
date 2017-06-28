@@ -22,13 +22,10 @@ PlaneCalibration::PlaneCalibration(const CameraModel& camera_model, const Calibr
   temp_deviation_planes_ = std::make_shared<DeviationPlanes>(plane_to_depth_, depth_visualizer);
 
   depth_visualizer_ = depth_visualizer;
-  precompute_planes_ = true;
-  precomputed_plane_pairs_count_ = 20;
 
-  if (precompute_planes_)
+  if (parameters->getParameters().precompute_planes_)
   {
-    precomputed_planes_ = std::make_shared<Planes>(precomputed_plane_pairs_count_, parameters_->getParameters(),
-                                                   plane_to_depth_);
+    precomputed_planes_ = std::make_shared<Planes>(parameters_->getParameters(), plane_to_depth_);
   }
 }
 
@@ -43,8 +40,7 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
   if (parameters_updated)
   {
     max_deviation_planes_->update(updated_parameters);
-    precomputed_planes_ = std::make_shared<Planes>(precomputed_plane_pairs_count_, parameters_->getParameters(),
-                                                   plane_to_depth_);
+    precomputed_planes_ = std::make_shared<Planes>(parameters_->getParameters(), plane_to_depth_);
   }
 
   double x_angle_offset = 0.0;
@@ -70,7 +66,7 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
   {
     double max_angle_deviation = std::max(std::abs(angle_offset_estimation.first),
                                           std::abs(angle_offset_estimation.second));
-    if (!precompute_planes_)
+    if (!temp_parameters_.precompute_planes_)
     {
       angle_offset_estimation = estimateAngles(filtered_depth_matrix, angle_offset_estimation, max_angle_deviation);
     }

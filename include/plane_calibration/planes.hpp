@@ -16,8 +16,7 @@ typedef std::shared_ptr<Eigen::MatrixXf> MatrixPlanePtr;
 class Planes
 {
 public:
-  Planes(const int& count, const CalibrationParameters::Parameters& parameters,
-         const PlaneToDepthImage& plane_to_depth);
+  Planes(const CalibrationParameters::Parameters& parameters, const PlaneToDepthImage& plane_to_depth);
 
   std::pair<MatrixPlanePtr, MatrixPlanePtr> getFittingXTiltPlanes(const double& angle, const double& deviation);
   std::pair<MatrixPlanePtr, MatrixPlanePtr> getFittingYTiltPlanes(const double& angle, const double& deviation);

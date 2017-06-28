@@ -48,6 +48,9 @@ protected:
 
   ros::Time last_call_time_;
   double calibration_rate_;
+
+  bool precompute_planes_;
+  int precomputed_plane_pairs_count_;
   CameraModelPtr camera_model_;
   CalibrationParametersPtr calibration_parameters_;
 

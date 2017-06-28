@@ -20,15 +20,19 @@ public:
       rotation_ = Eigen::AngleAxisd::Identity();
       max_deviation_ = 0.0;
       deviation_ = 0.0;
+      precompute_planes_ = true;
+      precomputed_plane_pairs_count_ = 0;
     }
 
     Parameters(const double& max_deviation, const Eigen::Vector3d& ground_plane_offset,
-               const Eigen::AngleAxisd& rotation = Eigen::AngleAxisd::Identity())
+               const Eigen::AngleAxisd& rotation, bool precompute_planes, int precomputed_plane_pairs_count)
     {
       ground_plane_offset_ = ground_plane_offset;
       rotation_ = rotation;
       max_deviation_ = max_deviation;
       deviation_ = max_deviation_;
+      precompute_planes_ = precompute_planes;
+      precomputed_plane_pairs_count_ = precomputed_plane_pairs_count;
     }
 
     Eigen::Affine3d getTransform() const
@@ -41,11 +45,14 @@ public:
 
     double max_deviation_;
     double deviation_;
+
+    bool precompute_planes_;
+    int precomputed_plane_pairs_count_;
   };
 
-  CalibrationParameters();
+  CalibrationParameters(bool precompute_planes, int precomputed_plane_pairs_count);
   CalibrationParameters(const double& max_deviation, const Eigen::Vector3d& ground_plane_offset,
-                        const Eigen::AngleAxisd& rotation = Eigen::AngleAxisd::Identity());
+                        const Eigen::AngleAxisd& rotation, bool precompute_planes, int precomputed_plane_pairs_count);
   CalibrationParameters(const CalibrationParameters &object);
 
   bool getUpdatedParameters(Parameters& updated_parameters);

@@ -25,6 +25,9 @@ PlaneCalibrationNodelet::PlaneCalibrationNodelet() :
   use_manual_ground_transform_ = false;
   ground_plane_rotation_ = Eigen::AngleAxisd::Identity();
 
+  precompute_planes_ = true;
+  precomputed_plane_pairs_count_ = 20;
+
   last_valid_calibration_result_ = std::make_pair(0.0, 0.0);
 
   Eigen::AngleAxisd rotation;
@@ -47,6 +50,9 @@ void PlaneCalibrationNodelet::onInit()
 
   node_handle.param("calibration_rate", calibration_rate_, 1.0);
   node_handle.param("ground_frame", ground_frame_, std::string("base_footprint"));
+  node_handle.param("precompute_planes", precompute_planes_, true);
+  node_handle.param("precomputed_plane_pairs_count", precomputed_plane_pairs_count_, 20);
+
   node_handle.param("camera_depth_frame", camera_depth_frame_, std::string("camera_depth_optical_frame"));
   node_handle.param("result_camera_depth_frame", result_frame_, std::string("ground_plane_frame"));
 
@@ -95,7 +101,8 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
 
   if (!calibration_parameters_)
   {
-    calibration_parameters_ = std::make_shared<CalibrationParameters>();
+    calibration_parameters_ = std::make_shared<CalibrationParameters>(precompute_planes_,
+                                                                      precomputed_plane_pairs_count_);
   }
 
   calibration_parameters_->updateDeviations(ecl::degrees_to_radians(config.max_deviation_degrees));

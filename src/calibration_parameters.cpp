@@ -2,18 +2,24 @@
 
 namespace plane_calibration
 {
-CalibrationParameters::CalibrationParameters()
+CalibrationParameters::CalibrationParameters(bool precompute_planes, int precomputed_plane_pairs_count)
 {
+  parameters_.precompute_planes_ = precompute_planes;
+  parameters_.precomputed_plane_pairs_count_ = precomputed_plane_pairs_count;
   updated_ = true;
 }
 
 CalibrationParameters::CalibrationParameters(const double& max_deviation, const Eigen::Vector3d& ground_plane_offset,
-                                             const Eigen::AngleAxisd& rotation)
+                                             const Eigen::AngleAxisd& rotation, bool precompute_planes,
+                                             int precomputed_plane_pairs_count)
 {
   parameters_.ground_plane_offset_ = ground_plane_offset;
   parameters_.max_deviation_ = max_deviation;
   parameters_.deviation_ = parameters_.max_deviation_;
   parameters_.rotation_ = rotation;
+
+  parameters_.precompute_planes_ = precompute_planes;
+  parameters_.precomputed_plane_pairs_count_ = precomputed_plane_pairs_count;
   updated_ = true;
 }
 
