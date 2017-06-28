@@ -112,6 +112,14 @@ void CalibrationParameters::updateDeviations(const double& value)
   updated_ = true;
 }
 
+void CalibrationParameters::updatePrecomputation(const bool& enable, const int& plane_pair_count)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  parameters_.precompute_planes_ = enable;
+  parameters_.precomputed_plane_pairs_count_ = plane_pair_count;
+  updated_ = true;
+}
+
 void CalibrationParameters::updateDeviation(const double& deviation)
 {
   std::lock_guard<std::mutex> lock(mutex_);

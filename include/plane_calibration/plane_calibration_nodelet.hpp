@@ -80,6 +80,7 @@ protected:
 
   std::atomic<bool> debug_;
   std::atomic<bool> use_manual_ground_transform_;
+  std::atomic<bool> always_update_;
   std::atomic<double> x_offset_;
   std::atomic<double> y_offset_;
   std::atomic<double> z_offset_;

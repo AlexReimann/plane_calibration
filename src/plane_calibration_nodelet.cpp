@@ -23,6 +23,7 @@ PlaneCalibrationNodelet::PlaneCalibrationNodelet() :
   calibration_rate_ = 1.0;
   debug_ = false;
   use_manual_ground_transform_ = false;
+  always_update_ = false;
   ground_plane_rotation_ = Eigen::AngleAxisd::Identity();
 
   precompute_planes_ = true;
@@ -106,8 +107,10 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   }
 
   calibration_parameters_->updateDeviations(ecl::degrees_to_radians(config.max_deviation_degrees));
+  calibration_parameters_->updatePrecomputation(config.precompute_planes, config.precomputed_plane_pairs_count);
 
   use_manual_ground_transform_ = config.use_manual_ground_transform;
+  always_update_ = config.always_update;
 
   calibration_validation_config_.too_low_buffer = config.input_max_noise;
   calibration_validation_config_.max_too_low_ratio = config.plane_max_too_low_ratio;
@@ -301,7 +304,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
     return;
   }
 
-  if (last_valid_calibration_result_plane_.size() != 0)
+  if (!always_update_ && last_valid_calibration_result_plane_.size() != 0)
   {
     bool parameters_updated = calibration_parameters_->parametersUpdated();
     bool last_calibration_is_still_good = calibration_validation_->groundPlaneFitsData(

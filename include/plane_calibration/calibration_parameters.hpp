@@ -69,6 +69,7 @@ public:
   void update(const Eigen::AngleAxisd& rotation);
   void update(const double& deviation);
   void updateDeviations(const double& value);
+  void updatePrecomputation(const bool& enable, const int& plane_pair_count);
 
   void updateDeviation(const double& deviation);
 

@@ -52,7 +52,7 @@ std::pair<double, double> PlaneCalibration::calibrate(const Eigen::MatrixXf& fil
   x_angle_offset += angle_offset_estimation.first;
   y_angle_offset += angle_offset_estimation.second;
 
-//  std::cout << "max_angle_deviation: " << ecl::radians_to_degrees(parameters.deviation_) << std::endl;
+//  std::cout << "max_angle_deviation: " << ecl::radians_to_degrees(temp_parameters_.deviation_) << std::endl;
 //  std::cout << "0 angles : " << ecl::radians_to_degrees(angle_offset_estimation.first) << ", "
 //      << ecl::radians_to_degrees(angle_offset_estimation.second) << std::endl;
 //  std::cout << "0 full   : " << ecl::radians_to_degrees(x_angle_offset) << ", "
