@@ -20,20 +20,19 @@ Planes::Planes(const CalibrationParameters::Parameters& parameters, const PlaneT
 
 void Planes::makePlanes()
 {
-  // max_deviation_ * 2 for plus / minus
-  double angle_step_size = max_deviation_ / pair_count_;
-  double angle = max_deviation_;
+  // When fitting a plane close to the max deviation we have to have
+  // some planes outside the max deviation borders
+  double buffer_multiplier = 2.2;
+  double angle_step_size = max_deviation_ * buffer_multiplier / pair_count_;
+  double angle = max_deviation_ * buffer_multiplier;
 
   for (int i = 0; i < pair_count_; ++i)
   {
-    if (angle == 0.0)
-    {
-      continue;
-    }
-
     addPlanePairs(angle);
     angle -= angle_step_size;
   }
+
+  addPlanes(0.0);
 }
 
 void Planes::addPlanePairs(const double& angle)
