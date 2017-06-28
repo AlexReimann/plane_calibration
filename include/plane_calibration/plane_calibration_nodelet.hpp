@@ -48,6 +48,9 @@ protected:
 
   ros::Time last_call_time_;
   double calibration_rate_;
+
+  bool precompute_planes_;
+  int precomputed_plane_pairs_count_;
   CameraModelPtr camera_model_;
   CalibrationParametersPtr calibration_parameters_;
 
@@ -77,6 +80,7 @@ protected:
 
   std::atomic<bool> debug_;
   std::atomic<bool> use_manual_ground_transform_;
+  std::atomic<bool> always_update_;
   std::atomic<double> x_offset_;
   std::atomic<double> y_offset_;
   std::atomic<double> z_offset_;

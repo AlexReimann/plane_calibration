@@ -23,7 +23,11 @@ PlaneCalibrationNodelet::PlaneCalibrationNodelet() :
   calibration_rate_ = 1.0;
   debug_ = false;
   use_manual_ground_transform_ = false;
+  always_update_ = false;
   ground_plane_rotation_ = Eigen::AngleAxisd::Identity();
+
+  precompute_planes_ = true;
+  precomputed_plane_pairs_count_ = 20;
 
   last_valid_calibration_result_ = std::make_pair(0.0, 0.0);
 
@@ -47,6 +51,9 @@ void PlaneCalibrationNodelet::onInit()
 
   node_handle.param("calibration_rate", calibration_rate_, 1.0);
   node_handle.param("ground_frame", ground_frame_, std::string("base_footprint"));
+  node_handle.param("precompute_planes", precompute_planes_, true);
+  node_handle.param("precomputed_plane_pairs_count", precomputed_plane_pairs_count_, 20);
+
   node_handle.param("camera_depth_frame", camera_depth_frame_, std::string("camera_depth_optical_frame"));
   node_handle.param("result_camera_depth_frame", result_frame_, std::string("ground_plane_frame"));
 
@@ -95,12 +102,15 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
 
   if (!calibration_parameters_)
   {
-    calibration_parameters_ = std::make_shared<CalibrationParameters>();
+    calibration_parameters_ = std::make_shared<CalibrationParameters>(precompute_planes_,
+                                                                      precomputed_plane_pairs_count_);
   }
 
   calibration_parameters_->updateDeviations(ecl::degrees_to_radians(config.max_deviation_degrees));
+  calibration_parameters_->updatePrecomputation(config.precompute_planes, config.precomputed_plane_pairs_count);
 
   use_manual_ground_transform_ = config.use_manual_ground_transform;
+  always_update_ = config.always_update;
 
   calibration_validation_config_.too_low_buffer = config.input_max_noise;
   calibration_validation_config_.max_too_low_ratio = config.plane_max_too_low_ratio;
@@ -294,7 +304,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
     return;
   }
 
-  if (last_valid_calibration_result_plane_.size() != 0)
+  if (!always_update_ && last_valid_calibration_result_plane_.size() != 0)
   {
     bool parameters_updated = calibration_parameters_->parametersUpdated();
     bool last_calibration_is_still_good = calibration_validation_->groundPlaneFitsData(
