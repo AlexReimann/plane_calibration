@@ -23,13 +23,11 @@ public:
       too_low_buffer = 0.0;
       max_too_low_ratio = 0.0;
       max_mean = 0.0;
-      max_deviation = 0.0;
     }
 
     double too_low_buffer;
     double max_too_low_ratio;
     double max_mean;
-    double max_deviation;
   };
 
   CalibrationValidation(const CameraModel& camera_model, const CalibrationParametersPtr& parameters,
