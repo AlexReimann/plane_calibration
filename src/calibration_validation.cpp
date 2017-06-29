@@ -59,13 +59,11 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
   double too_low_ratio = is_too_low / (double)not_nan_count;
 
   double mean = difference.sum() / not_nan_count;
-  double max_deviation = difference.cwiseAbs().maxCoeff();
 
   if (debug)
   {
     depth_visualizer_->publishDouble("debug/result_too_low_ratio", too_low_ratio);
     depth_visualizer_->publishDouble("debug/result_mean", mean);
-    depth_visualizer_->publishDouble("debug/result_max_deviation", max_deviation);
   }
 
   if (too_low_ratio > config_.max_too_low_ratio)
@@ -84,16 +82,6 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
     {
       ROS_WARN_STREAM(
           "[PlaneCalibrationNodelet]: Calibration result abs mean error is too high (max: " << config_.max_mean << "): " << std::abs(mean));
-    }
-    return false;
-  }
-
-  if (max_deviation > config_.max_deviation)
-  {
-    if (debug)
-    {
-      ROS_WARN_STREAM(
-          "[PlaneCalibrationNodelet]: Calibration result max error is too high (max: " << config_.max_deviation << "): " << max_deviation);
     }
     return false;
   }

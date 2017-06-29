@@ -115,7 +115,6 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   calibration_validation_config_.too_low_buffer = config.input_max_noise;
   calibration_validation_config_.max_too_low_ratio = config.plane_max_too_low_ratio;
   calibration_validation_config_.max_mean = config.plane_max_mean;
-  calibration_validation_config_.max_deviation = config.plane_max_deviation;
 
   if (calibration_validation_)
   {
