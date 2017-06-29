@@ -50,10 +50,8 @@ void InputFilter::updateBorders_()
 void InputFilter::filter(Eigen::MatrixXf& matrix, bool debug)
 {
   std::lock_guard<std::mutex> lock(mutex_);
-  Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> far_enough = matrix.array() >= min_plane_.array();
-  Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> close_enough = matrix.array() <= max_plane_.array();
 
-  Eigen::MatrixXf valid = (far_enough.array() && close_enough.array()).cast<float>();
+  Eigen::MatrixXf valid = (matrix.array() >= min_plane_.array() && matrix.array() <= max_plane_.array()).cast<float>();
   matrix = matrix.cwiseProduct(valid);
 
   matrix = matrix.unaryExpr([](float v)
@@ -66,12 +64,10 @@ void InputFilter::filter(Eigen::MatrixXf& matrix, bool debug)
     depth_visualizer_->publishImage("debug/filter/min_plane", max_plane_);
     depth_visualizer_->publishImage("debug/filter/max_plane", max_plane_);
 
-    depth_visualizer_->publishImage("debug/filter/far_enough", far_enough.cast<float>());
-    depth_visualizer_->publishImage("debug/filter/close_enough", close_enough.cast<float>());
+    depth_visualizer_->publishImage("debug/filter/valid_input", valid.cast<float>());
 
     depth_visualizer_->publishImage("debug/filter/diff_min", min_plane_ - matrix);
     depth_visualizer_->publishImage("debug/filter/diff_max", max_plane_ - matrix);
-    depth_visualizer_->publishImage("debug/filter/not_filtered", valid);
     depth_visualizer_->publishCloud("debug/filter/filtered", matrix);
   }
 }
