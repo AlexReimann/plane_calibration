@@ -37,8 +37,14 @@ public:
 
   bool angleOffsetValid(const std::pair<double, double>& angles);
   bool groundPlaneFitsData(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data, const bool& debug = false);
+  bool groundPlaneHasDataBelow(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data, const bool& debug =
+                                   false);
 
 protected:
+  void getDifferenceAndNotNanCount(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data,
+                                   Eigen::MatrixXf& difference, int& not_nan_count);
+  bool checkTooLow(const Eigen::MatrixXf& difference, const int& not_nan_count, double& too_low_ratio);
+
   mutable std::mutex mutex_;
   CameraModel camera_model_;
   CalibrationParametersPtr parameters_;

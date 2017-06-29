@@ -45,18 +45,13 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
                                                 const bool& debug)
 {
   std::lock_guard<std::mutex> lock(mutex_);
-  Eigen::MatrixXf difference = (ground_plane - data);
 
-  // (nan == nan) gives false
-  int not_nan_count = (difference.array() == difference.array()).count();
+  Eigen::MatrixXf difference;
+  int not_nan_count;
+  getDifferenceAndNotNanCount(ground_plane, data, difference, not_nan_count);
 
-  //remove nans
-  difference = difference.unaryExpr([](float v)
-  { return std::isnan(v) ? 0.0f : v;});
-
-  double too_low_distance = 0.0 - config_.too_low_buffer;
-  int is_too_low = (difference.array() < too_low_distance).count();
-  double too_low_ratio = is_too_low / (double)not_nan_count;
+  double too_low_ratio;
+  bool too_low = checkTooLow(difference, not_nan_count, too_low_ratio);
 
   double mean = difference.sum() / not_nan_count;
 
@@ -66,7 +61,7 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
     depth_visualizer_->publishDouble("debug/result_mean", mean);
   }
 
-  if (too_low_ratio > config_.max_too_low_ratio)
+  if (too_low)
   {
     if (debug)
     {
@@ -87,6 +82,65 @@ bool CalibrationValidation::groundPlaneFitsData(const Eigen::MatrixXf& ground_pl
   }
 
   return true;
+}
+
+bool CalibrationValidation::groundPlaneHasDataBelow(const Eigen::MatrixXf& ground_plane, const Eigen::MatrixXf& data,
+                                                    const bool& debug)
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  Eigen::MatrixXf difference;
+  int not_nan_count;
+  getDifferenceAndNotNanCount(ground_plane, data, difference, not_nan_count);
+
+  double too_low_ratio;
+  bool too_low = checkTooLow(difference, not_nan_count, too_low_ratio);
+
+  if (debug)
+  {
+    depth_visualizer_->publishDouble("debug/check_too_low_ratio", too_low_ratio);
+  }
+
+  if (too_low)
+  {
+    if (debug)
+    {
+      ROS_WARN_STREAM(
+          "[PlaneCalibrationNodelet]: Data has too many points below ground plane, ratio (max: " << config_.max_too_low_ratio << "): " << too_low_ratio);
+    }
+    return true;
+  }
+
+  return false;
+}
+
+void CalibrationValidation::getDifferenceAndNotNanCount(const Eigen::MatrixXf& ground_plane,
+                                                        const Eigen::MatrixXf& data, Eigen::MatrixXf& difference,
+                                                        int& not_nan_count)
+{
+  difference = (ground_plane - data);
+
+  // (nan == nan) gives false
+  not_nan_count = (difference.array() == difference.array()).count();
+
+  //remove nans
+  difference = difference.unaryExpr([](float v)
+  { return std::isnan(v) ? 0.0f : v;});
+}
+
+bool CalibrationValidation::checkTooLow(const Eigen::MatrixXf& difference, const int& not_nan_count,
+                                        double& too_low_ratio)
+{
+  double too_low_distance = 0.0 - config_.too_low_buffer;
+  int is_too_low = (difference.array() < too_low_distance).count();
+  too_low_ratio = is_too_low / (double)not_nan_count;
+
+  if (too_low_ratio > config_.max_too_low_ratio)
+  {
+    return true;
+  }
+
+  return false;
 }
 
 }
