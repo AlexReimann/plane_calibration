@@ -381,7 +381,7 @@ void PlaneCalibrationNodelet::runCalibration(Eigen::MatrixXf depth_matrix)
 
   geometry_msgs::Pose2D update_msg;
   update_msg.x = ecl::radians_to_degrees(last_valid_calibration_result_.first);
-  update_msg.y = ecl::radians_to_degrees(last_valid_calibration_result_.first);
+  update_msg.y = ecl::radians_to_degrees(last_valid_calibration_result_.second);
   update_msg.theta = 0.0;
   pub_update_.publish(update_msg);
 
