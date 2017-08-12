@@ -42,8 +42,8 @@ Lazy / conservative update scheme:
 6. Run the calibration only as fast as ``calibration_rate``, but publish the old transform every time we get input data
 
 ## Where do the multipliers come from / how does it work?
-No really statisfying explanation available. Basically I ran some simulation tests and the angle error is __almost__ linear to ``ds_px`` (_difference of sum of differences_) mentioned above. ¯\\_(ツ)\_/¯
-The residual error given a perfect ground plane could actually be easily estimated by a function fit, but the input data has some noise anyways and the iterative fitting works well enough. Maybe will do that in the future to converge with less iterations.
+The scheme is using some ideas of the Iterative Closest Point-algorithm (ICP). Using the error between a guess and the input, a transformation can be calculated to iteratevly adjust the guess to fit the input. So the error gives an evaluation function how close the input is to the guess.  
+Using two opposite extrem guesses gives two errors. I run some simulation tests they showed that the true error is __almost__ linear to ratio between the errors. This probably has some mathematical / geometrical reason which I didn't look into (feel free  to write a paper on that). The residual error given a perfect ground plane could actually be easily estimated by a function fit, but the input data has some noise anyways and the iterative fitting works well enough. Maybe will do that in the future to converge with less iterations.
 
 It should be mentioned that the multipliers depend on the distance of the fitted plane to the sensor. So it needs to be re-calculated every time this changes (in case someone wants to use this approach for something else).
 
