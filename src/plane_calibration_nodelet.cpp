@@ -20,6 +20,7 @@ namespace plane_calibration
 PlaneCalibrationNodelet::PlaneCalibrationNodelet() :
     transform_listener_buffer_(), transform_listener_(transform_listener_buffer_)
 {
+  enable_ = true;
   calibration_rate_ = 1.0;
   debug_ = false;
   use_manual_ground_transform_ = false;
@@ -77,6 +78,8 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
     std::string debug_status = debug_ ? "enabled" : "disabled";
     ROS_INFO_STREAM("[PlaneCalibrationNodelet]: Debug " << debug_status);
   }
+
+  enable_ = config.enable;
 
   x_offset_ = config.x;
   y_offset_ = config.y;
@@ -147,6 +150,16 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
     return;
   }
   last_call_time_ = ros::Time::now();
+
+  if (!enable_)
+  {
+    if(debug_)
+    {
+      ROS_INFO_STREAM_THROTTLE(5.0, "[PlaneCalibrationNodelet]: Calibration disabled, not calibrating");
+    }
+
+    return;
+  }
 
   bool wait_for_initialization = !camera_model_ || !calibration_parameters_;
   if (wait_for_initialization)

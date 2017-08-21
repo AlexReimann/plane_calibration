@@ -46,6 +46,7 @@ protected:
   virtual void runCalibration(Eigen::MatrixXf depth_matrix);
   virtual void publishTransform();
 
+  std::atomic<bool> enable_;
   ros::Time last_call_time_;
   double calibration_rate_;
 
