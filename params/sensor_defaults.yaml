@@ -1,0 +1,13 @@
+
+ground_frame:                 camera_link
+debug:                        true
+use_manual_ground_transform:  true
+
+x:            0
+y:            0
+py_degree:    180.0
+
+max_deviation_degrees:        12.0
+input_max_nan_ratio:          0.7
+input_min_data_ratio:         0.3
+plane_max_too_low_ratio:      0.2

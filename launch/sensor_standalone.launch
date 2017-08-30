@@ -1,0 +1,12 @@
+<launch>
+  <param name="/bond_disable_heartbeat_timeout" value="true"/>
+  <node pkg="nodelet" type="nodelet" name="plane_calibration_manager" args="manager"/>
+
+  <include file="$(find plane_calibration)/launch/nodelet.launch.xml">
+    <arg name="nodelet_manager_name"    value="plane_calibration_manager"/>
+    <arg name="parameter_file_path"     value="$(find plane_calibration)/params/sensor_defaults.yaml"/>
+
+  </include>
+
+  <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" />
+</launch>
