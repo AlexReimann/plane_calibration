@@ -36,6 +36,9 @@ Lazy / conservative update scheme:
 1. Always check if input has"enough" data "at the right place" to fit a plane
    1. If not then do nothing and keep broadcasting old transformation
 2. Calculate transformation once and keep using it if still fits the data
+   1. The trigger is a certain amount of data points being below the ground level
+       - This works well if the robot moves only in a plane
+       - __Warning: Causes problems with inclines / ramps and bigger sensor tilting (e.g. because of moving over obstacles)__
 3. If transformation does not fit the data, calculate new
 4. If new transformation fits the data, replace old transformation
 5. Else if new transformation does not fit, keep old
