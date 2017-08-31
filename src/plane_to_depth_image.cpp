@@ -18,6 +18,11 @@ Eigen::MatrixXf PlaneToDepthImage::convert(const Eigen::Affine3d& plane_transfor
   return convert(plane_transformation, camera_model_paramaters_, xy_multipliers_);
 }
 
+Eigen::MatrixXf PlaneToDepthImage::convert(const Eigen::Hyperplane<double, 3>& plane)
+{
+  return convert(plane, xy_multipliers_);
+}
+
 MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
                                     const CameraModel::Parameters& camera_model_paramaters)
 {
@@ -32,8 +37,6 @@ MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
                                     const CameraModel::Parameters& camera_model_paramaters,
                                     const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers)
 {
-  MatrixXd result_image_matrix;
-
   Vector3d translation = plane_transformation.translation();
   double distance = translation.norm();
   int height = camera_model_paramaters.height_;
@@ -42,6 +45,12 @@ MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
   Vector4d plane_normal = plane_transformation * z_axis;
   Hyperplane<double, 3> plane(plane_normal.topRows(3), translation);
 
+  return convert(plane, xy_multipliers);
+}
+
+Eigen::MatrixXf PlaneToDepthImage::convert(const Eigen::Hyperplane<double, 3>& plane,
+                                           const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers)
+{
   // a*x + b*y + c*z + d = 0
   // a * (depth * x_multiplier) + b * (depth * y_multiplier) + c * depth + d = 0
   // depth * ( a * x_multiplier + b * y_multiplier + c) + d = 0
@@ -52,7 +61,7 @@ MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
   MatrixXd y = plane.coeffs().coeff(1) * xy_multipliers.second;
   double z = plane.coeffs().coeff(2); //same for all rays
 
-  result_image_matrix = -plane.coeffs().coeff(3) / ((x + y).array() + z);
+  MatrixXd result_image_matrix = -plane.coeffs().coeff(3) / ((x + y).array() + z);
 
   return result_image_matrix.cast<float>();
 }

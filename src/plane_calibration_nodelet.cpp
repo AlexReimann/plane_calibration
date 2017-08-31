@@ -89,6 +89,13 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   py_offset_ = ecl::degrees_to_radians(config.py_degree);
   pz_offset_ = ecl::degrees_to_radians(config.pz_degree);
 
+  test_x_ = config.test_x;
+  test_y_ = config.test_y;
+  test_z_ = config.test_z;
+
+  test_a_ = config.test_a;
+  test_b_ = config.test_b;
+
   max_deviation_ = ecl::degrees_to_radians(config.max_deviation_degrees);
   iterations_ = config.iterations;
 
@@ -122,6 +129,11 @@ void PlaneCalibrationNodelet::reconfigureCB(PlaneCalibrationConfig &config, uint
   if (calibration_validation_)
   {
     calibration_validation_->updateConfig(calibration_validation_config_);
+  }
+
+  if (plane_to_depth_converter_)
+  {
+    test();
   }
 }
 
@@ -189,6 +201,7 @@ void PlaneCalibrationNodelet::depthImageCB(const sensor_msgs::ImageConstPtr& dep
   {
     plane_to_depth_converter_ = std::make_shared<PlaneToDepthImage>(camera_model_->getParameters());
   }
+  return;
 
   Eigen::MatrixXf depth_matrix;
 
@@ -439,6 +452,41 @@ void PlaneCalibrationNodelet::publishTransform()
     depth_visualizer_->publishCloud("debug/calibrated_plane", last_valid_calibration_transformation_,
                                     camera_model_->getParameters());
   }
+}
+
+using namespace Eigen;
+
+void PlaneCalibrationNodelet::test()
+{
+  Eigen::Vector3d p(test_x_, test_y_, test_z_);
+  Eigen::Vector3d a = test_a_ * Eigen::Vector3d::UnitX();
+  Eigen::Vector3d b = test_b_ * Eigen::Vector3d::UnitY();
+
+  Eigen::Vector3d normal_vector = (a - p).cross(b - p);
+  normal_vector.normalize();
+
+  Hyperplane<double, 3> plane_parameters(normal_vector, p);
+
+  Eigen::MatrixXf plane = plane_to_depth_converter_->convert(plane_parameters);
+
+  depth_visualizer_->publishCloud("test/plane", plane);
+
+  /////////////////////////////////////////////////////////////////////////
+
+  static tf2_ros::TransformBroadcaster transform_broadcaster;
+  geometry_msgs::TransformStamped transformStamped;
+
+  transformStamped.header.stamp = ros::Time::now();
+  transformStamped.header.frame_id = camera_depth_frame_;
+  transformStamped.child_frame_id = result_frame_;
+
+  transformStamped.transform.rotation.w = 1.0;
+  transformStamped.transform.translation.x = test_x_;
+  transformStamped.transform.translation.y = test_y_;
+  transformStamped.transform.translation.z = test_z_;
+  transformStamped.child_frame_id = "point";
+
+  transform_broadcaster.sendTransform(transformStamped);
 }
 
 } /* end namespace */

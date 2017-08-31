@@ -46,6 +46,8 @@ protected:
   virtual void runCalibration(Eigen::MatrixXf depth_matrix);
   virtual void publishTransform();
 
+  virtual void test();
+
   std::atomic<bool> enable_;
   ros::Time last_call_time_;
   double calibration_rate_;
@@ -89,6 +91,13 @@ protected:
   std::atomic<double> px_offset_;
   std::atomic<double> py_offset_;
   std::atomic<double> pz_offset_;
+
+  std::atomic<double> test_x_;
+  std::atomic<double> test_y_;
+  std::atomic<double> test_z_;
+
+  std::atomic<double> test_a_;
+  std::atomic<double> test_b_;
 
   std::string ground_frame_;
   std::string camera_depth_frame_;

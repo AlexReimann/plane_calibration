@@ -31,11 +31,14 @@ public:
 
   PlaneToDepthImage(const CameraModel::Parameters& camera_model_paramaters);
   Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation);
+  Eigen::MatrixXf convert(const Eigen::Hyperplane<double, 3>& plane);
 
   static Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation,
                                  const CameraModel::Parameters& camera_model_paramaters);
   static Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation,
                                  const CameraModel::Parameters& camera_model_paramaters,
+                                 const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers);
+  static Eigen::MatrixXf convert(const Eigen::Hyperplane<double, 3>& plane,
                                  const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers);
 
   static std::pair<Eigen::MatrixXd, Eigen::MatrixXd> depthCalculationXYMultiplier(
