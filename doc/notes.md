@@ -21,5 +21,21 @@ Plane parameterization are typically:
 - 3 points
 
 
-Use 2 points on axis? 
-- Have restrictions?
+Restricted max angle deviation
+
+Hough:
+* Plane with distance + 2 angles
+* Check amount of points fitting for each plane (voting)
+
+--
+
+* Angles are limited
+* Thus point deviation from plane is limited 
+* Max deviation for each pixel should be linear to plane distance d (or even fixed?).
+* Z is independent from camera parameters
+
+* If hough planes are parallel to viewing (fixed d), only angles variable
+* The planes each pixel / point fits to is a fixed d range (because plane rotation is limited)
+* So each pixel votes for the planes in certain d range
+* ...?
+* profit
