@@ -35,17 +35,19 @@ public:
 
   static Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation,
                                  const CameraModel::Parameters& camera_model_paramaters);
-  static Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation,
-                                 const CameraModel::Parameters& camera_model_paramaters,
-                                 const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers);
-  static Eigen::MatrixXf convert(const Eigen::Hyperplane<double, 3>& plane,
-                                 const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers);
 
   static std::pair<Eigen::MatrixXd, Eigen::MatrixXd> depthCalculationXYMultiplier(
       const CameraModel::Parameters& camera_model_paramaters);
 
+  static Eigen::MatrixXf convert(const Eigen::Affine3d& plane_transformation,
+                                 const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers);
+  static Eigen::MatrixXf convert(const Eigen::Hyperplane<double, 3>& plane,
+                                 const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers);
+
   static Errors getErrors(const Eigen::Affine3d& plane_transformation,
                           const CameraModel::Parameters& camera_model_paramaters, Eigen::MatrixXf image_matrix);
+
+  static Eigen::Vector3d pointToDepth(const Eigen::Vector3d& point);
 
 protected:
   CameraModel::Parameters camera_model_paramaters_;

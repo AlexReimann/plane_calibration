@@ -458,12 +458,21 @@ using namespace Eigen;
 
 void PlaneCalibrationNodelet::test()
 {
-  Eigen::Vector3d p(test_x_, test_y_, test_z_);
-  Eigen::Vector3d a = test_a_ * Eigen::Vector3d::UnitX();
-  Eigen::Vector3d b = test_b_ * Eigen::Vector3d::UnitY();
+//  Eigen::Vector3d p(test_x_, test_y_, test_z_);
+//  Eigen::Vector3d a = test_a_ * Eigen::Vector3d::UnitX();
+//  Eigen::Vector3d b = test_b_ * Eigen::Vector3d::UnitY();
 
-  Eigen::Vector3d normal_vector = (a - p).cross(b - p);
-  normal_vector.normalize();
+//  Eigen::Vector3d normal_vector = (a - p).cross(b - p);
+//  normal_vector.normalize();
+
+  Eigen::AngleAxisd tilt_x(max_deviation_, Eigen::Vector3d::UnitX());
+  Eigen::AngleAxisd tilt_y(max_deviation_, Eigen::Vector3d::UnitY());
+  Eigen::Affine3d transform = tilt_x * tilt_y;
+
+  Eigen::MatrixXf max_error = plane_to_depth_converter_->convert(transform);
+
+  Eigen::Vector3d normal_vector = Eigen::Vector3d::UnitZ();
+  Eigen::Vector3d p = test_a_ * Eigen::Vector3d::UnitZ();
 
   Hyperplane<double, 3> plane_parameters(normal_vector, p);
 

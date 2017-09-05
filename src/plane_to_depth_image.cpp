@@ -15,7 +15,7 @@ PlaneToDepthImage::PlaneToDepthImage(const CameraModel::Parameters& camera_model
 
 Eigen::MatrixXf PlaneToDepthImage::convert(const Eigen::Affine3d& plane_transformation)
 {
-  return convert(plane_transformation, camera_model_paramaters_, xy_multipliers_);
+  return convert(plane_transformation, xy_multipliers_);
 }
 
 Eigen::MatrixXf PlaneToDepthImage::convert(const Eigen::Hyperplane<double, 3>& plane)
@@ -30,16 +30,33 @@ MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
   // (u - c) * depth * (1 / f) -> depth * ( (u - c) / f) -> depth * multiplier
   std::pair<MatrixXd, MatrixXd> xy_multipliers = depthCalculationXYMultiplier(camera_model_paramaters);
 
-  return convert(plane_transformation, camera_model_paramaters, xy_multipliers);
+  return convert(plane_transformation, xy_multipliers);
+}
+
+std::pair<MatrixXd, MatrixXd> PlaneToDepthImage::depthCalculationXYMultiplier(
+    const CameraModel::Parameters& camera_model_paramaters)
+{
+  MatrixXd xy_factor_matrix(2 * camera_model_paramaters.height_, camera_model_paramaters.width_);
+
+  VectorXd x_indices_lin = VectorXd::LinSpaced(camera_model_paramaters.width_, 0.0, camera_model_paramaters.width_ - 1);
+  VectorXd y_indices_lin = VectorXd::LinSpaced(camera_model_paramaters.height_, 0.0,
+                                               camera_model_paramaters.height_ - 1);
+
+  MatrixXd x_indices_matrix = (x_indices_lin * VectorXd::Ones(camera_model_paramaters.height_).transpose()).transpose();
+  MatrixXd y_indices_matrix = y_indices_lin * VectorXd::Ones(camera_model_paramaters.width_).transpose();
+
+  // (u - c) * d * (1 / f) -> d * ( (u - c) / f) -> d * multiplier
+  MatrixXd x_multiplier = (x_indices_matrix.array() - camera_model_paramaters.center_x_) / camera_model_paramaters.f_x_;
+  MatrixXd y_multiplier = (y_indices_matrix.array() - camera_model_paramaters.center_y_) / camera_model_paramaters.f_y_;
+
+  std::pair<MatrixXd, MatrixXd> multiplier_pair(x_multiplier, y_multiplier);
+  return multiplier_pair;
 }
 
 MatrixXf PlaneToDepthImage::convert(const Affine3d& plane_transformation,
-                                    const CameraModel::Parameters& camera_model_paramaters,
                                     const std::pair<Eigen::MatrixXd, Eigen::MatrixXd>& xy_multipliers)
 {
   Vector3d translation = plane_transformation.translation();
-  double distance = translation.norm();
-  int height = camera_model_paramaters.height_;
 
   Vector4d z_axis(0.0, 0.0, 1.0, 0.0);
   Vector4d plane_normal = plane_transformation * z_axis;
@@ -66,26 +83,6 @@ Eigen::MatrixXf PlaneToDepthImage::convert(const Eigen::Hyperplane<double, 3>& p
   return result_image_matrix.cast<float>();
 }
 
-std::pair<MatrixXd, MatrixXd> PlaneToDepthImage::depthCalculationXYMultiplier(
-    const CameraModel::Parameters& camera_model_paramaters)
-{
-  MatrixXd xy_factor_matrix(2 * camera_model_paramaters.height_, camera_model_paramaters.width_);
-
-  VectorXd x_indices_lin = VectorXd::LinSpaced(camera_model_paramaters.width_, 0.0, camera_model_paramaters.width_ - 1);
-  VectorXd y_indices_lin = VectorXd::LinSpaced(camera_model_paramaters.height_, 0.0,
-                                               camera_model_paramaters.height_ - 1);
-
-  MatrixXd x_indices_matrix = (x_indices_lin * VectorXd::Ones(camera_model_paramaters.height_).transpose()).transpose();
-  MatrixXd y_indices_matrix = y_indices_lin * VectorXd::Ones(camera_model_paramaters.width_).transpose();
-
-  // (u - c) * d * (1 / f) -> d * ( (u - c) / f) -> d * multiplier
-  MatrixXd x_multiplier = (x_indices_matrix.array() - camera_model_paramaters.center_x_) / camera_model_paramaters.f_x_;
-  MatrixXd y_multiplier = (y_indices_matrix.array() - camera_model_paramaters.center_y_) / camera_model_paramaters.f_y_;
-
-  std::pair<MatrixXd, MatrixXd> multiplier_pair(x_multiplier, y_multiplier);
-  return multiplier_pair;
-}
-
 PlaneToDepthImage::Errors PlaneToDepthImage::getErrors(const Eigen::Affine3d& plane_transformation,
                                                        const CameraModel::Parameters& camera_model_paramaters,
                                                        Eigen::MatrixXf image_matrix)
@@ -108,6 +105,11 @@ PlaneToDepthImage::Errors PlaneToDepthImage::getErrors(const Eigen::Affine3d& pl
   errors.max = difference.maxCoeff();
 
   return errors;
+}
+
+Eigen::Vector3d PlaneToDepthImage::pointToDepth(const Eigen::Vector3d& point)
+{
+/// TODO
 }
 
 } /* end namespace */
